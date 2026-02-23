@@ -1,10 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import pygame
 
-from game.config import PLAYER_HEALTH, TANK_SIZE, TANK_SPEED, TANK_TURN_SPEED
+from game.config import (
+    PLAYER_HEALTH,
+    SPEED_BOOST_MULTIPLIER,
+    TANK_SIZE,
+    TANK_SPEED,
+    TANK_TURN_SPEED,
+    TURRET_TURN_SPEED,
+)
+from game.entities.powerup import PowerUpType
 
 
 @dataclass
@@ -13,12 +21,57 @@ class Tank:
     rotation_deg: float
     turret_rotation_deg: float
     health: int = PLAYER_HEALTH
+    active_powerups: dict[PowerUpType, float] = field(default_factory=dict)
 
-    def update(self, dt: float, forward: float, turn: float) -> None:
-        # Movement based on rotation angle
+    # -- Properties for easy checks ------------------------------------------
+
+    @property
+    def has_speed_boost(self) -> bool:
+        return PowerUpType.SPEED in self.active_powerups
+
+    @property
+    def has_shield(self) -> bool:
+        return PowerUpType.SHIELD in self.active_powerups
+
+    @property
+    def has_triple_shot(self) -> bool:
+        return PowerUpType.TRIPLE in self.active_powerups
+
+    # -- Power-up management --------------------------------------------------
+
+    def apply_powerup(self, ptype: PowerUpType, duration: float) -> None:
+        self.active_powerups[ptype] = duration
+
+    def update_powerups(self, dt: float) -> None:
+        expired = [k for k, v in self.active_powerups.items() if v - dt <= 0]
+        for k in expired:
+            del self.active_powerups[k]
+        for k in self.active_powerups:
+            self.active_powerups[k] -= dt
+
+    def take_damage(self, amount: int = 1) -> None:
+        """Apply damage, respecting shield. Returns without effect if shielded."""
+        if self.has_shield:
+            # Shield absorbs the hit and is consumed
+            del self.active_powerups[PowerUpType.SHIELD]
+            return
+        self.health -= amount
+
+    # -- Movement -------------------------------------------------------------
+
+    def update(self, dt: float, forward: float, turn: float, turret_turn: float = 0.0) -> None:
         self.rotation_deg += turn * TANK_TURN_SPEED * dt
         direction = pygame.Vector2(1, 0).rotate(self.rotation_deg)
-        self.position += direction * (forward * TANK_SPEED * dt)
+
+        speed = TANK_SPEED
+        if self.has_speed_boost:
+            speed *= SPEED_BOOST_MULTIPLIER
+
+        self.position += direction * (forward * speed * dt)
+
+        # Independent turret rotation – turret keeps its position when no input
+        if turret_turn != 0.0:
+            self.turret_rotation_deg += turret_turn * TURRET_TURN_SPEED * dt
 
     def get_rect(self) -> pygame.Rect:
         return pygame.Rect(

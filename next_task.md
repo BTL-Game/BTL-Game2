@@ -1,0 +1,6 @@
+- Fix lại sound -> sound hơi nhỏ
+- xem lại turret, turret có cần xoay theo tank không,
+- sửa lại hướng của tank và turret. (hiện tại nó đang không đúng theo sprite khó di chuyển)
+- sửa lại food -> chỉ cần 1 màu trắng, không cần bonus?
+- Thêm effect nổ tung khi endgame?
+- Có cho tự giết chính minh cho vui hơn không?
