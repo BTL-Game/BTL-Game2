@@ -89,6 +89,11 @@ class GameState:
 
         # Debounce for key presses in menus
         self._key_cooldown: float = 0.0
+        # Timer to keep the round_over screen visible before accepting input
+        self._round_over_timer: float = 0.0
+        # Explosion sprite and position for drawing during round_over
+        self._explosion_sprite: pygame.Surface | None = None
+        self._explosion_pos: pygame.Vector2 = pygame.Vector2(0, 0)
 
     # ── public interface ──────────────────────────────────────────────────
 
@@ -108,9 +113,13 @@ class GameState:
             self._update_play(dt, keys)
 
         elif self.mode == "round_over":
-            if self._menu_confirm(keys):
-                self._start_round()
-                self._key_cooldown = 0.25
+            # Respect the explicit round-over timer first, then allow confirm
+            if self._round_over_timer > 0.0:
+                self._round_over_timer = max(0.0, self._round_over_timer - dt)
+            else:
+                if self._menu_confirm(keys):
+                    self._start_round()
+                    self._key_cooldown = 0.25
 
         elif self.mode == "match_over":
             if self._menu_confirm(keys):
@@ -131,6 +140,14 @@ class GameState:
 
         elif self.mode == "round_over":
             self._render_play(screen)
+            
+            # Draw explosion sprite if available
+            if self._explosion_sprite is not None:
+                explosion_rect = self._explosion_sprite.get_rect(
+                    center=(int(self._explosion_pos.x), int(self._explosion_pos.y))
+                )
+                screen.blit(self._explosion_sprite, explosion_rect)
+            
             killed_id = 1 if self.winner_id == 2 else 2
             winner_text = f"Player {self.winner_id} eliminated Player {killed_id}!"
             draw_game_over(screen, winner_text, f"Round {self.round_number}  |  "
@@ -187,6 +204,8 @@ class GameState:
         self.particle_mgr.reset()
         self.shoot_flashes.clear()
         self.winner_id = None
+        self._explosion_sprite = None
+        self._round_over_timer = 0.0
 
         # Rebuild destructible walls each round
         self._load_map()
@@ -202,7 +221,9 @@ class GameState:
 
         # Bullets
         active_walls = [w for w in self.walls if not w.is_destroyed]
-        self.bullet_mgr.update(dt, active_walls)
+        bounces = self.bullet_mgr.update(dt, active_walls)
+        if bounces > 0:
+            self.sound_mgr.play_bounce()
         self._update_shoot_flashes(dt)
 
         round_winner = self.bullet_mgr.check_hits(self.tanks)
@@ -239,6 +260,15 @@ class GameState:
             self.particle_mgr.spawn_explosion(killed_tank.position.copy(), color)
             self.sound_mgr.play_explosion()
 
+            # Store explosion sprite for display during round_over
+            explosion_sprite = self.sprites.explosion_blue if killed_id == 1 else self.sprites.explosion_red
+            if explosion_sprite is not None:
+                self._explosion_sprite = explosion_sprite
+                self._explosion_pos = killed_tank.position.copy()
+
+            # Prevent immediately skipping the round-over screen (e.g. from a
+            # held key). Give players a short moment to see the explosion.
+            self._round_over_timer = 1.0
             self.mode = "round_over"
 
     def _handle_tank_input(self, player_id: int, controls, keys, dt: float) -> None:
@@ -248,7 +278,11 @@ class GameState:
         turret_turn = (1 if keys[controls.turret_right] else 0) - (1 if keys[controls.turret_left] else 0)
 
         previous = tank.position.copy()
+        previous_rotation = tank.rotation_deg
         tank.update(dt, forward, turn, turret_turn)
+
+        # make the turret follow the tank body's rotation delta
+        tank.turret_rotation_deg += (tank.rotation_deg - previous_rotation)
 
         # Collision resolution (split X/Y)
         active_walls = [w for w in self.walls if not w.is_destroyed]

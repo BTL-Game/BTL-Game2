@@ -54,12 +54,14 @@ class BulletManager:
 
         self.fire_timers[player_id] = BULLET_COOLDOWN
 
-    def update(self, dt: float, walls: list[Wall]) -> None:
+    def update(self, dt: float, walls: list[Wall]) -> int:
+        """Advance bullets and return number of bounce events this frame."""
         self.fire_timers[1] = max(0.0, self.fire_timers[1] - dt)
         self.fire_timers[2] = max(0.0, self.fire_timers[2] - dt)
 
         screen_rect = pygame.Rect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)
         alive: list[Bullet] = []
+        bounce_count = 0
 
         for bullet in self.bullets:
             bullet.update(dt)
@@ -73,6 +75,7 @@ class BulletManager:
                     bullet.velocity = reflect_velocity(bullet.velocity, normal)
                     bullet.position += normal * (overlap + 0.1)
                     bullet.bounces += 1
+                    bounce_count += 1
 
                     # Destructible wall hit
                     wall.hit()
@@ -85,6 +88,7 @@ class BulletManager:
                 alive.append(bullet)
 
         self.bullets = alive
+        return bounce_count
 
     def check_hits(self, tanks: dict[int, Tank]) -> int | None:
         """Check bullet-tank collisions. Returns winner_id if a tank was killed, else None."""
@@ -97,9 +101,9 @@ class BulletManager:
                 if player_id == bullet.owner_id:
                     continue
                 if tank.get_rect().colliderect(bullet.get_rect()):
-                    tank.take_damage(1)
+                    died = tank.take_damage(1)
                     hit = True
-                    if tank.health <= 0 and winner is None:
+                    if died and winner is None:
                         winner = bullet.owner_id
                     break
             if not hit:

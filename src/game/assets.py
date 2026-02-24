@@ -20,12 +20,16 @@ class SpriteSet:
     bullet: pygame.Surface | None = None
     shoot_blue: pygame.Surface | None = None
     shoot_red: pygame.Surface | None = None
+    explosion_blue: pygame.Surface | None = None
+    explosion_red: pygame.Surface | None = None
 
 
 ASSET_ROOT = Path(__file__).resolve().parents[2] / "assets"
 DEFAULT_BODY_NAME = "body_tracks.png"
 DEFAULT_TURRET_NAME = "weapon.png"
 DEFAULT_SHOOT_NAME = "shoot.png"
+DEFAULT_EXPLOSION_BLUE_NAME = "blueexplosion.png"
+DEFAULT_EXPLOSION_RED_NAME = "redexplosion.png"
 
 
 def _load_image(path: Path, size: tuple[int, int] | None = None) -> pygame.Surface | None:
@@ -52,6 +56,7 @@ def _build_tank_sprites(body: pygame.Surface | None, turret: pygame.Surface | No
 def load_sprites() -> SpriteSet:
     size = (TANK_SIZE, TANK_SIZE)
     shoot_size = (SHOOT_SIZE, SHOOT_SIZE)
+    explosion_size = (TANK_SIZE * 2, TANK_SIZE * 2)
 
     blue_body = _load_image(ASSET_ROOT / "Blue" / "Bodies" / DEFAULT_BODY_NAME, size)
     blue_turret = _load_image(ASSET_ROOT / "Blue" / "Weapons" / DEFAULT_TURRET_NAME, size)
@@ -59,10 +64,14 @@ def load_sprites() -> SpriteSet:
     red_turret = _load_image(ASSET_ROOT / "Red" / "Weapons" / DEFAULT_TURRET_NAME, size)
     shoot_blue = _load_image(ASSET_ROOT / "Blue" / "Weapons" / DEFAULT_SHOOT_NAME, shoot_size)
     shoot_red = _load_image(ASSET_ROOT / "Red" / "Weapons" / DEFAULT_SHOOT_NAME, shoot_size)
+    explosion_blue = _load_image(ASSET_ROOT / "Blue" / "Bodies" / DEFAULT_EXPLOSION_BLUE_NAME, explosion_size)
+    explosion_red = _load_image(ASSET_ROOT / "Red" / "Bodies" / DEFAULT_EXPLOSION_RED_NAME, explosion_size)
 
     return SpriteSet(
         tank_blue=_build_tank_sprites(blue_body, blue_turret),
         tank_red=_build_tank_sprites(red_body, red_turret),
         shoot_blue=shoot_blue,
         shoot_red=shoot_red,
+        explosion_blue=explosion_blue,
+        explosion_red=explosion_red,
     )

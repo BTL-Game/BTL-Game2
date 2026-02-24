@@ -49,13 +49,18 @@ class Tank:
         for k in self.active_powerups:
             self.active_powerups[k] -= dt
 
-    def take_damage(self, amount: int = 1) -> None:
-        """Apply damage, respecting shield. Returns without effect if shielded."""
+    def take_damage(self, amount: int = 1) -> bool:
+        """Apply damage, respecting shield.
+
+        Returns True if this damage reduced health to 0 or below (tank died),
+        otherwise False.
+        """
         if self.has_shield:
             # Shield absorbs the hit and is consumed
             del self.active_powerups[PowerUpType.SHIELD]
-            return
+            return False
         self.health -= amount
+        return self.health <= 0
 
     # -- Movement -------------------------------------------------------------
 
