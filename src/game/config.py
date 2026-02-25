@@ -10,7 +10,7 @@ FPS = 60
 # Tiles & Walls
 # ---------------------------------------------------------------------------
 TILE_SIZE = 40
-WALL_INSET = 6
+WALL_INSET = 1
 
 TILE_OPEN = "."
 TILE_STEEL = "#"

@@ -196,8 +196,8 @@ class GameState:
     def _start_round(self) -> None:
         self.round_number += 1
         self.tanks = {
-            1: Tank(position=self.current_map.spawn_p1.copy(), rotation_deg=0.0, turret_rotation_deg=0.0),
-            2: Tank(position=self.current_map.spawn_p2.copy(), rotation_deg=180.0, turret_rotation_deg=180.0),
+            1: Tank(position=self.current_map.spawn_p1.copy(), rotation_deg=90.0, turret_rotation_deg=90.0),
+            2: Tank(position=self.current_map.spawn_p2.copy(), rotation_deg=-90.0, turret_rotation_deg=-90.0),
         }
         self.bullet_mgr.reset()
         self.powerup_mgr.reset()
@@ -345,6 +345,32 @@ class GameState:
             else:
                 self._draw_tank_sprite(screen, tank, tank_sprites)
 
+            # Light arrow movement indicator
+            if tank.is_moving_forward:
+                base_color = PLAYER1_COLOR if player_id == 1 else PLAYER2_COLOR
+                surf_size = TANK_SIZE * 3
+                arrow_surf = pygame.Surface((surf_size, surf_size), pygame.SRCALPHA)
+                cx, cy = surf_size / 2, surf_size / 2
+                
+                for i in range(3):
+                    alpha = max(0, 200 - (i * 70))
+                    color = (base_color[0], base_color[1], base_color[2], alpha)
+                    tip_y = cy - (TANK_SIZE * 0.7) - (i * TANK_SIZE * 0.4)
+                    
+                    points = [
+                        (cx, tip_y),                       # Top center
+                        (cx - 10, tip_y + 10),             # Bottom left outer
+                        (cx - 6, tip_y + 13),              # Bottom left inner
+                        (cx, tip_y + 5),                   # Bottom center inner
+                        (cx + 6, tip_y + 13),              # Bottom right inner
+                        (cx + 10, tip_y + 10),             # Bottom right outer
+                    ]
+                    pygame.draw.polygon(arrow_surf, color, points)
+
+                rotated_arrow = pygame.transform.rotate(arrow_surf, -tank.rotation_deg)
+                arrow_rect = rotated_arrow.get_rect(center=(int(tank.position.x), int(tank.position.y)))
+                screen.blit(rotated_arrow, arrow_rect)
+
             # Shield glow
             if tank.has_shield:
                 shield_surf = pygame.Surface((TANK_SIZE + 8, TANK_SIZE + 8), pygame.SRCALPHA)
@@ -373,7 +399,7 @@ class GameState:
         color = PLAYER1_COLOR if player_id == 1 else PLAYER2_COLOR
         rect = tank.get_rect()
         pygame.draw.rect(screen, color, rect)
-        direction = pygame.Vector2(1, 0).rotate(tank.turret_rotation_deg)
+        direction = pygame.Vector2(0, -1).rotate(tank.turret_rotation_deg)
         turret_end = tank.position + direction * TURRET_LENGTH
         pygame.draw.line(
             screen, (230, 230, 230),
@@ -386,12 +412,12 @@ class GameState:
         body_rect = body.get_rect(center=(int(tank.position.x), int(tank.position.y)))
         screen.blit(body, body_rect)
 
-        turret = pygame.transform.rotate(sprites.turret, -tank.turret_rotation_deg)
+        turret = pygame.transform.rotate(sprites.turret, -tank.turret_rotation_deg + 90.0)
         turret_rect = turret.get_rect(center=(int(tank.position.x), int(tank.position.y)))
         screen.blit(turret, turret_rect)
 
     def _spawn_shoot_flash(self, player_id: int, tank: Tank) -> None:
-        direction = pygame.Vector2(1, 0).rotate(tank.turret_rotation_deg)
+        direction = pygame.Vector2(0, -1).rotate(tank.turret_rotation_deg)
         flash_offset = TANK_SIZE / 2 + 2
         position = tank.position + direction * flash_offset
         self.shoot_flashes.append(
@@ -412,7 +438,7 @@ class GameState:
         sprite = self.sprites.shoot_blue if flash.player_id == 1 else self.sprites.shoot_red
         if sprite is None:
             return
-        rotated = pygame.transform.rotate(sprite, -flash.rotation_deg)
+        rotated = pygame.transform.rotate(sprite, -flash.rotation_deg + 90.0)
         rect = rotated.get_rect(center=(int(flash.position.x), int(flash.position.y)))
         screen.blit(rotated, rect)
 

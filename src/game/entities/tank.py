@@ -22,6 +22,7 @@ class Tank:
     turret_rotation_deg: float
     health: int = PLAYER_HEALTH
     active_powerups: dict[PowerUpType, float] = field(default_factory=dict)
+    is_moving_forward: bool = False
 
     # -- Properties for easy checks ------------------------------------------
 
@@ -66,7 +67,8 @@ class Tank:
 
     def update(self, dt: float, forward: float, turn: float, turret_turn: float = 0.0) -> None:
         self.rotation_deg += turn * TANK_TURN_SPEED * dt
-        direction = pygame.Vector2(1, 0).rotate(self.rotation_deg)
+        direction = pygame.Vector2(0, -1).rotate(self.rotation_deg)
+        self.is_moving_forward = forward > 0.0
 
         speed = TANK_SPEED
         if self.has_speed_boost:

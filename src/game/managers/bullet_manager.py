@@ -37,7 +37,7 @@ class BulletManager:
         return count < BULLET_MAX_PER_PLAYER
 
     def spawn(self, player_id: int, tank: Tank) -> None:
-        direction = pygame.Vector2(1, 0).rotate(tank.turret_rotation_deg)
+        direction = pygame.Vector2(0, -1).rotate(tank.turret_rotation_deg)
         offset = TANK_SIZE / 2 + BULLET_RADIUS + 2
         pos = tank.position + direction * offset
         vel = direction * BULLET_SPEED
@@ -45,7 +45,7 @@ class BulletManager:
 
         if tank.has_triple_shot:
             for angle_offset in (-TRIPLE_SHOT_SPREAD, TRIPLE_SHOT_SPREAD):
-                side_dir = pygame.Vector2(1, 0).rotate(tank.turret_rotation_deg + angle_offset)
+                side_dir = pygame.Vector2(0, -1).rotate(tank.turret_rotation_deg + angle_offset)
                 side_pos = tank.position + side_dir * offset
                 side_vel = side_dir * BULLET_SPEED
                 self.bullets.append(
