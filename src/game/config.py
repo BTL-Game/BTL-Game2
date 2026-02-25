@@ -35,7 +35,7 @@ TURRET_TURN_SPEED = 200.0  # independent turret rotation speed (deg/s)
 SHOOT_SIZE = 28
 SHOOT_FLASH_DURATION = 0.12
 
-BULLET_SPEED = 320.0
+BULLET_SPEED = 280.0
 BULLET_RADIUS = 4
 BULLET_MAX_PER_PLAYER = 5
 BULLET_COOLDOWN = 0.25
@@ -55,7 +55,7 @@ FOOD_INITIAL_COUNT = 8       # food items spawned at match start
 FOOD_SPAWN_INTERVAL = 6.0    # seconds between respawn waves
 FOOD_MAX_ON_MAP = 15         # maximum food items on map at once
 FOOD_BASE_SCORE = 1          # score value for wave-1 food
-FOOD_SCORE_INCREMENT = 1     # added per wave (wave2=2pts, wave3=3pts…)
+FOOD_SCORE_INCREMENT = 0     # added per wave (all food worth 1pt now)
 
 # ---------------------------------------------------------------------------
 # Power-ups
@@ -97,3 +97,10 @@ POWERUP_COLORS = {
     "shield": (100, 180, 255),
     "triple": (255, 200, 60),
 }
+
+# ---------------------------------------------------------------------------
+# Audio Settings
+# ---------------------------------------------------------------------------
+DEFAULT_SFX_VOLUME = 0.5  # 50/100
+DEFAULT_MUSIC_VOLUME = 0.5  # 50/100
+VOLUME_STEP = 0.1  # Volume adjustment increment

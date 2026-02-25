@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import pygame
 
 from game.config import BULLET_RADIUS
-
 @dataclass
 class Bullet:
     position: pygame.Vector2

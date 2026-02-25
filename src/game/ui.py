@@ -105,7 +105,7 @@ def _draw_mini_map(screen: pygame.Surface, grid: list[str], x: int, y: int, w: i
 
 # ── In-game HUD ──────────────────────────────────────────────────────────
 
-def draw_hud(screen: pygame.Surface, p1: Tank, p2: Tank, scores: dict[int, int], round_num: int) -> None:
+def draw_hud(screen: pygame.Surface, p1: Tank, p2: Tank, scores: dict[int, int], round_num: int, round_wins: dict[int, int]) -> None:
     font = _font("arial", 18)
     small = _font("arial", 14)
 
@@ -133,9 +133,22 @@ def draw_hud(screen: pygame.Surface, p1: Tank, p2: Tank, scores: dict[int, int],
         pup_rect = pup_surf.get_rect(topright=(screen.get_width() - 12, 28))
         screen.blit(pup_surf, pup_rect)
 
-    # Round info (center top)
-    round_surf = small.render(f"Round {round_num}", True, (140, 140, 140))
-    screen.blit(round_surf, round_surf.get_rect(midtop=(screen.get_width() // 2, 8)))
+    # Round info (center top) with win counters on either side
+    round_font = _font("arial", 22)
+    round_surf = round_font.render(f"Round {round_num}", True, (200, 200, 200))
+    round_rect = round_surf.get_rect(midtop=(screen.get_width() // 2, 8))
+    screen.blit(round_surf, round_rect)
+    
+    # P1 round wins (left of Round text, blue)
+    win_font = _font("arial", 24)
+    p1_wins_surf = win_font.render(str(round_wins[1]), True, PLAYER1_COLOR)
+    p1_wins_rect = p1_wins_surf.get_rect(midright=(round_rect.left - 20, round_rect.centery))
+    screen.blit(p1_wins_surf, p1_wins_rect)
+    
+    # P2 round wins (right of Round text, red)
+    p2_wins_surf = win_font.render(str(round_wins[2]), True, PLAYER2_COLOR)
+    p2_wins_rect = p2_wins_surf.get_rect(midleft=(round_rect.right + 20, round_rect.centery))
+    screen.blit(p2_wins_surf, p2_wins_rect)
 
 
 def _powerup_text(tank: Tank) -> str:
@@ -183,3 +196,108 @@ def draw_match_winner(screen: pygame.Surface, winner_id: int, scores: dict[int, 
 
     prompt = _font("arial", 18).render("Press Enter or Space to return to title", True, (160, 160, 160))
     screen.blit(prompt, prompt.get_rect(center=(cx, cy + 50)))
+
+
+def draw_pause_menu(screen: pygame.Surface, selection: int, sfx_volume: float, music_volume: float) -> None:
+    """Draw pause/options menu overlay with volume controls."""
+    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 180))
+    screen.blit(overlay, (0, 0))
+
+    cx, cy = screen.get_rect().center
+
+    title = _font("arial", 36).render("PAUSED", True, HUD_COLOR)
+    screen.blit(title, title.get_rect(center=(cx, cy - 80)))
+
+    # Volume controls
+    option_font = _font("arial", 20)
+    value_font = _font("arial", 18)
+    
+    # SFX Volume
+    sfx_y = cy - 20
+    sfx_color = (100, 180, 255) if selection == 0 else (180, 180, 180)
+    sfx_text = option_font.render("SFX Volume", True, sfx_color)
+    screen.blit(sfx_text, sfx_text.get_rect(midright=(cx - 20, sfx_y)))
+    
+    # SFX volume bar
+    bar_width = 200
+    bar_height = 20
+    bar_x = cx + 10
+    bar_y = sfx_y - bar_height // 2
+    
+    # Background bar
+    pygame.draw.rect(screen, (60, 60, 70), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
+    # Filled bar
+    filled_width = int(bar_width * sfx_volume)
+    if filled_width > 0:
+        pygame.draw.rect(screen, (100, 180, 255), (bar_x, bar_y, filled_width, bar_height), border_radius=4)
+    # Border
+    pygame.draw.rect(screen, sfx_color, (bar_x, bar_y, bar_width, bar_height), 2, border_radius=4)
+    
+    # SFX percentage
+    sfx_pct = value_font.render(f"{int(sfx_volume * 100)}", True, sfx_color)
+    screen.blit(sfx_pct, sfx_pct.get_rect(midleft=(bar_x + bar_width + 10, sfx_y)))
+    
+    # Music Volume
+    music_y = cy + 30
+    music_color = (100, 180, 255) if selection == 1 else (180, 180, 180)
+    music_text = option_font.render("Music Volume", True, music_color)
+    screen.blit(music_text, music_text.get_rect(midright=(cx - 20, music_y)))
+    
+    # Music volume bar
+    bar_y = music_y - bar_height // 2
+    
+    # Background bar
+    pygame.draw.rect(screen, (60, 60, 70), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
+    # Filled bar
+    filled_width = int(bar_width * music_volume)
+    if filled_width > 0:
+        pygame.draw.rect(screen, (100, 180, 255), (bar_x, bar_y, filled_width, bar_height), border_radius=4)
+    # Border
+    pygame.draw.rect(screen, music_color, (bar_x, bar_y, bar_width, bar_height), 2, border_radius=4)
+    
+    # Music percentage
+    music_pct = value_font.render(f"{int(music_volume * 100)}", True, music_color)
+    screen.blit(music_pct, music_pct.get_rect(midleft=(bar_x + bar_width + 10, music_y)))
+
+    # Instructions
+    hint_font = _font("arial", 14)
+    hints = [
+        "↑↓ / WS: Select   ←→ / AD: Adjust",
+        "ESC: Resume Game"
+    ]
+    for i, hint in enumerate(hints):
+        hint_surf = hint_font.render(hint, True, (140, 140, 140))
+        screen.blit(hint_surf, hint_surf.get_rect(center=(cx, cy + 90 + i * 20)))
+
+
+def draw_countdown(screen: pygame.Surface, time_left: float) -> None:
+    """Draw countdown overlay (3-2-1) in center of screen."""
+    # Semi-transparent overlay
+    overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    overlay.fill((0, 0, 0, 100))
+    screen.blit(overlay, (0, 0))
+
+    cx, cy = screen.get_rect().center
+    
+    # Calculate which number to show (3, 2, 1)
+    if time_left > 2.0:
+        number = "3"
+        color = (255, 100, 100)  # Red
+    elif time_left > 1.0:
+        number = "2"
+        color = (255, 200, 100)  # Orange
+    else:
+        number = "1"
+        color = (100, 255, 100)  # Green
+    
+    # Large countdown number
+    countdown_font = _font("arial", 120)
+    countdown_surf = countdown_font.render(number, True, color)
+    screen.blit(countdown_surf, countdown_surf.get_rect(center=(cx, cy)))
+    
+    # "Get Ready!" text above the number
+    ready_font = _font("arial", 32)
+    ready_surf = ready_font.render("Get Ready!", True, (235, 235, 235))
+    screen.blit(ready_surf, ready_surf.get_rect(center=(cx, cy - 100)))
+

@@ -74,7 +74,8 @@ def get_open_tiles(grid: list[str]) -> list[pygame.Vector2]:
     open_tiles: list[pygame.Vector2] = []
     for row_idx, row in enumerate(grid):
         for col_idx, char in enumerate(row):
-            if char in (TILE_OPEN, TILE_SPAWN_P1, TILE_SPAWN_P2):
+            # Only include completely open tiles, exclude bricks and spawn points
+            if char == TILE_OPEN:
                 open_tiles.append(_tile_center(row_idx, col_idx))
     return open_tiles
 

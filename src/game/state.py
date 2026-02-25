@@ -36,10 +36,12 @@ from game.managers.food_manager import FoodManager
 from game.managers.powerup_manager import PowerUpManager
 from game.managers.sound_manager import SoundManager
 from game.ui import (
+    draw_countdown,
     draw_game_over,
     draw_hud,
     draw_map_select,
     draw_match_winner,
+    draw_pause_menu,
     draw_title_screen,
 )
 
@@ -60,7 +62,7 @@ class ShootFlash:
 
 class GameState:
     def __init__(self) -> None:
-        # Mode: "title" → "map_select" → "play" → "round_over" → "play"/… → "match_over"
+        # Mode: "title" → "map_select" → "countdown" → "play" → "round_over" → "countdown" → "play"/… → "match_over"
         self.mode: str = "title"
 
         # Managers
@@ -81,6 +83,7 @@ class GameState:
 
         # Game data
         self.scores: dict[int, int] = {1: 0, 2: 0}
+        self.round_wins: dict[int, int] = {1: 0, 2: 0}  # track rounds won by each player
         self.tanks: dict[int, Tank] = {}
         self.shoot_flashes: list[ShootFlash] = []
         self.winner_id: int | None = None      # round winner
@@ -94,6 +97,12 @@ class GameState:
         # Explosion sprite and position for drawing during round_over
         self._explosion_sprite: pygame.Surface | None = None
         self._explosion_pos: pygame.Vector2 = pygame.Vector2(0, 0)
+        # ESC key tracking for pause menu
+        self._esc_pressed: bool = False
+        # Pause menu state: 0 = SFX, 1 = Music
+        self._pause_menu_selection: int = 0
+        # Countdown timer (3-2-1) before gameplay starts
+        self._countdown_timer: float = 0.0
 
     # ── public interface ──────────────────────────────────────────────────
 
@@ -111,6 +120,14 @@ class GameState:
 
         elif self.mode == "play":
             self._update_play(dt, keys)
+
+        elif self.mode == "paused":
+            self._update_pause_menu(keys)
+
+        elif self.mode == "countdown":
+            self._countdown_timer -= dt
+            if self._countdown_timer <= 0:
+                self.mode = "play"
 
         elif self.mode == "round_over":
             # Respect the explicit round-over timer first, then allow confirm
@@ -137,6 +154,16 @@ class GameState:
 
         elif self.mode == "play":
             self._render_play(screen)
+
+        elif self.mode == "paused":
+            self._render_play(screen)
+            sfx_vol = self.sound_mgr.get_sfx_volume()
+            music_vol = self.sound_mgr.get_music_volume()
+            draw_pause_menu(screen, self._pause_menu_selection, sfx_vol, music_vol)
+
+        elif self.mode == "countdown":
+            self._render_play(screen)
+            draw_countdown(screen, self._countdown_timer)
 
         elif self.mode == "round_over":
             self._render_play(screen)
@@ -177,14 +204,14 @@ class GameState:
     def _start_match(self) -> None:
         self.current_map = ALL_MAPS[self.map_index]
         self.scores = {1: 0, 2: 0}
+        self.round_wins = {1: 0, 2: 0}
         self.round_number = 0
         self.match_winner_id = None
         self._load_map()
-        self._start_round()
+        self._start_round()  # This sets mode to "countdown"
         # Spawn initial food for the match
         self.food_mgr.set_open_tiles(get_open_tiles(self.current_map.grid))
         self.food_mgr.spawn_initial()
-        self.mode = "play"
 
     def _load_map(self) -> None:
         walls, sp1, sp2 = build_walls(self.current_map.grid)
@@ -210,11 +237,21 @@ class GameState:
         # Rebuild destructible walls each round
         self._load_map()
         # NOTE: food persists across rounds (not reset here)
-        self.mode = "play"
+        # Start countdown before gameplay
+        self._countdown_timer = 3.0
+        self.mode = "countdown"
 
     # ── gameplay loop ─────────────────────────────────────────────────────
 
     def _update_play(self, dt: float, keys) -> None:
+        # Handle ESC for pause menu
+        if keys[pygame.K_ESCAPE] and not self._esc_pressed:
+            self._esc_pressed = True
+            self.mode = "paused"
+            return
+        if not keys[pygame.K_ESCAPE]:
+            self._esc_pressed = False
+
         # Input
         self._handle_tank_input(1, PLAYER1, keys, dt)
         self._handle_tank_input(2, PLAYER2, keys, dt)
@@ -252,6 +289,7 @@ class GameState:
         # Round-end on kill (reset round, NOT score)
         if round_winner is not None:
             self.winner_id = round_winner
+            self.round_wins[round_winner] += 1  # increment round win counter
 
             # Spawn explosion at killed tank
             killed_id = 1 if round_winner == 2 else 2
@@ -270,6 +308,49 @@ class GameState:
             # held key). Give players a short moment to see the explosion.
             self._round_over_timer = 1.0
             self.mode = "round_over"
+
+    def _update_pause_menu(self, keys) -> None:
+        """Handle input in pause menu for volume controls."""
+        from game.config import VOLUME_STEP
+        
+        # Handle ESC to unpause
+        if keys[pygame.K_ESCAPE] and not self._esc_pressed:
+            self._esc_pressed = True
+            # Start countdown before resuming gameplay
+            self._countdown_timer = 3.0
+            self.mode = "countdown"
+        if not keys[pygame.K_ESCAPE]:
+            self._esc_pressed = False
+        
+        # Cooldown for menu navigation
+        if self._key_cooldown > 0:
+            return
+        
+        # Navigate between SFX and Music
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            self._pause_menu_selection = 0  # SFX
+            self._key_cooldown = 0.15
+        elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            self._pause_menu_selection = 1  # Music
+            self._key_cooldown = 0.15
+        
+        # Adjust volume
+        elif keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            if self._pause_menu_selection == 0:
+                new_vol = self.sound_mgr.get_sfx_volume() - VOLUME_STEP
+                self.sound_mgr.set_sfx_volume(new_vol)
+            else:
+                new_vol = self.sound_mgr.get_music_volume() - VOLUME_STEP
+                self.sound_mgr.set_music_volume(new_vol)
+            self._key_cooldown = 0.12
+        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            if self._pause_menu_selection == 0:
+                new_vol = self.sound_mgr.get_sfx_volume() + VOLUME_STEP
+                self.sound_mgr.set_sfx_volume(new_vol)
+            else:
+                new_vol = self.sound_mgr.get_music_volume() + VOLUME_STEP
+                self.sound_mgr.set_music_volume(new_vol)
+            self._key_cooldown = 0.12
 
     def _handle_tank_input(self, player_id: int, controls, keys, dt: float) -> None:
         tank = self.tanks[player_id]
@@ -330,9 +411,11 @@ class GameState:
 
         # Bullets
         for bullet in self.bullet_mgr.bullets:
+            # Use player color for bullets
+            bullet_color = PLAYER1_COLOR if bullet.owner_id == 1 else PLAYER2_COLOR
             pygame.draw.circle(
                 screen,
-                BULLET_COLOR,
+                bullet_color,
                 (int(bullet.position.x), int(bullet.position.y)),
                 BULLET_RADIUS,
             )
@@ -391,7 +474,7 @@ class GameState:
         # HUD
         p1 = self.tanks[1]
         p2 = self.tanks[2]
-        draw_hud(screen, p1, p2, self.scores, self.round_number)
+        draw_hud(screen, p1, p2, self.scores, self.round_number, self.round_wins)
 
     # ── helper drawing methods ────────────────────────────────────────────
 

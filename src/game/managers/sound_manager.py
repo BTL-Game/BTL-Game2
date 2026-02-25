@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pygame
 
+from game.config import DEFAULT_MUSIC_VOLUME, DEFAULT_SFX_VOLUME
+
 
 SOUND_DIR = Path(__file__).resolve().parents[3] / "assets" / "sounds"
-MUSIC_VOLUME = 0.2  # Lower volume for background music
-SOUND_VOLUME = 0.3  # Lower volume for sound effects
 
 
 class SoundManager:
@@ -17,6 +17,9 @@ class SoundManager:
         self._enabled = True
         self._sounds: dict[str, pygame.mixer.Sound | None] = {}
         self._warned_disabled = False
+        self._sfx_volume = DEFAULT_SFX_VOLUME
+        self._music_volume = DEFAULT_MUSIC_VOLUME
+        
         try:
             pygame.mixer.init()
         except pygame.error:
@@ -35,10 +38,8 @@ class SoundManager:
             "powerup": self._load("powerup.wav"),
         }
 
-        # Set lower volumes for all sound effects
-        for sound in self._sounds.values():
-            if sound is not None:
-                sound.set_volume(SOUND_VOLUME)
+        # Set volumes for all sound effects
+        self._update_sfx_volume()
 
         # Load and play background music
         self._load_background_music()
@@ -55,7 +56,33 @@ class SoundManager:
     def play_powerup(self) -> None:
         self._play("powerup")
 
+    def set_sfx_volume(self, volume: float) -> None:
+        """Set SFX volume (0.0 to 1.0)."""
+        self._sfx_volume = max(0.0, min(1.0, volume))
+        self._update_sfx_volume()
+
+    def set_music_volume(self, volume: float) -> None:
+        """Set music volume (0.0 to 1.0)."""
+        self._music_volume = max(0.0, min(1.0, volume))
+        if self._enabled:
+            pygame.mixer.music.set_volume(self._music_volume)
+
+    def get_sfx_volume(self) -> float:
+        """Get current SFX volume."""
+        self._music_volume
+        return self._sfx_volume
+
+    def get_music_volume(self) -> float:
+        """Get current music volume."""
+        return self._music_volume
+
     # -- internal -----------------------------------------------------------
+
+    def _update_sfx_volume(self) -> None:
+        """Apply current SFX volume to all sounds."""
+        for sound in self._sounds.values():
+            if sound is not None:
+                sound.set_volume(self._sfx_volume)
 
     def _load_background_music(self) -> None:
         """Load and play background music on loop."""
@@ -67,7 +94,7 @@ class SoundManager:
             return
         try:
             pygame.mixer.music.load(str(path))
-            pygame.mixer.music.set_volume(MUSIC_VOLUME)
+            pygame.mixer.music.set_volume(self._music_volume)
             pygame.mixer.music.play(-1)  # -1 means loop forever
             print("[SoundManager] Background music started.")
         except pygame.error as e:
