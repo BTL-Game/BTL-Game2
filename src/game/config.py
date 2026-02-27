@@ -18,7 +18,7 @@ TILE_BRICK = "B"
 TILE_SPAWN_P1 = "1"
 TILE_SPAWN_P2 = "2"
 
-BRICK_HEALTH = 1  # hits to destroy a brick wall
+BRICK_HEALTH = 2  # hits to destroy a brick wall
 
 # ---------------------------------------------------------------------------
 # Tank

@@ -3,6 +3,7 @@ from __future__ import annotations
 import pygame
 
 from game.config import (
+    BG_COLOR,
     HUD_COLOR,
     PLAYER1_COLOR,
     PLAYER2_COLOR,
@@ -10,6 +11,7 @@ from game.config import (
     SCORE_LIMIT,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    WALL_COLOR,
 )
 from game.entities.powerup import PowerUpType
 from game.entities.tank import Tank
@@ -20,10 +22,10 @@ from game.entities.tank import Tank
 _fonts: dict[str, pygame.font.Font] = {}
 
 
-def _font(name: str, size: int) -> pygame.font.Font:
-    key = f"{name}_{size}"
+def _font(name: str, size: int, bold: bool = False) -> pygame.font.Font:
+    key = f"{name}_{size}_{'bold' if bold else 'normal'}"
     if key not in _fonts:
-        _fonts[key] = pygame.font.SysFont(name, size)
+        _fonts[key] = pygame.font.SysFont(name, size, bold=bold)
     return _fonts[key]
 
 
@@ -106,13 +108,15 @@ def _draw_mini_map(screen: pygame.Surface, grid: list[str], x: int, y: int, w: i
 # ── In-game HUD ──────────────────────────────────────────────────────────
 
 def draw_hud(screen: pygame.Surface, p1: Tank, p2: Tank, scores: dict[int, int], round_num: int, round_wins: dict[int, int]) -> None:
-    font = _font("arial", 18)
+    font = _font("arial", 18, bold=True)
     small = _font("arial", 14)
 
     # P1 info (left)
     p1_text = f"P1  HP: {p1.health}  Score: {scores[1]}/{SCORE_LIMIT}"
-    left = font.render(p1_text, True, PLAYER1_COLOR)
-    screen.blit(left, (12, 8))
+    left = font.render(p1_text, True, HUD_COLOR)
+    left_rect = left.get_rect(topleft=(12, 8))
+    pygame.draw.rect(screen, BG_COLOR, left_rect.inflate(8, 6))
+    screen.blit(left, left_rect)
 
     # P1 active power-ups
     p1_pups = _powerup_text(p1)
@@ -122,8 +126,9 @@ def draw_hud(screen: pygame.Surface, p1: Tank, p2: Tank, scores: dict[int, int],
 
     # P2 info (right)
     p2_text = f"P2  HP: {p2.health}  Score: {scores[2]}/{SCORE_LIMIT}"
-    right = font.render(p2_text, True, PLAYER2_COLOR)
+    right = font.render(p2_text, True, HUD_COLOR)
     right_rect = right.get_rect(topright=(screen.get_width() - 12, 8))
+    pygame.draw.rect(screen, BG_COLOR, right_rect.inflate(8, 6))
     screen.blit(right, right_rect)
 
     # P2 active power-ups
@@ -134,20 +139,23 @@ def draw_hud(screen: pygame.Surface, p1: Tank, p2: Tank, scores: dict[int, int],
         screen.blit(pup_surf, pup_rect)
 
     # Round info (center top) with win counters on either side
-    round_font = _font("arial", 22)
-    round_surf = round_font.render(f"Round {round_num}", True, (200, 200, 200))
+    round_font = _font("arial", 22, bold=True)
+    round_surf = round_font.render(f"Round {round_num}", True, HUD_COLOR)
     round_rect = round_surf.get_rect(midtop=(screen.get_width() // 2, 8))
+    pygame.draw.rect(screen, BG_COLOR, round_rect.inflate(8, 6))
     screen.blit(round_surf, round_rect)
     
     # P1 round wins (left of Round text, blue)
     win_font = _font("arial", 24)
     p1_wins_surf = win_font.render(str(round_wins[1]), True, PLAYER1_COLOR)
     p1_wins_rect = p1_wins_surf.get_rect(midright=(round_rect.left - 20, round_rect.centery))
+    pygame.draw.rect(screen, BG_COLOR, p1_wins_rect.inflate(8, 6))
     screen.blit(p1_wins_surf, p1_wins_rect)
     
     # P2 round wins (right of Round text, red)
     p2_wins_surf = win_font.render(str(round_wins[2]), True, PLAYER2_COLOR)
     p2_wins_rect = p2_wins_surf.get_rect(midleft=(round_rect.right + 20, round_rect.centery))
+    pygame.draw.rect(screen, BG_COLOR, p2_wins_rect.inflate(8, 6))
     screen.blit(p2_wins_surf, p2_wins_rect)
 
 

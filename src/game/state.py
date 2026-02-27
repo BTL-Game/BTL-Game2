@@ -26,7 +26,7 @@ from game.config import (
 from game.entities.bullet import Bullet
 from game.entities.powerup import PowerUpType
 from game.entities.tank import Tank
-from game.entities.wall import Wall, WallType
+from game.entities.wall import Wall, WallType, WallState
 from game.input import PLAYER1, PLAYER2
 from game.levels import ALL_MAPS, MapData, build_walls, get_open_tiles
 from game.managers.bullet_manager import BulletManager
@@ -378,23 +378,48 @@ class GameState:
     # ── rendering ─────────────────────────────────────────────────────────
 
     def _render_play(self, screen: pygame.Surface) -> None:
+        # Draw background image if available, otherwise the screen is already filled with BG_COLOR
+        if getattr(self.sprites, "background", None) is not None:
+            screen.blit(self.sprites.background, (0, 0))
+
         # Walls
         for wall in self.walls:
             if wall.is_destroyed:
                 continue
-            color = BRICK_COLOR if wall.wall_type == WallType.BRICK else WALL_COLOR
-            pygame.draw.rect(screen, color, wall.rect)
+            
+            # Use sprites if available, otherwise fallback to colored rectangles
+            if self.sprites.wall_sprites is not None:
+                wall_state = wall.visual_state
+                if wall_state == WallState.UNBROKEN:
+                    sprite = self.sprites.wall_sprites.unbroken
+                elif wall_state == WallState.BREAKABLE:
+                    sprite = self.sprites.wall_sprites.breakable
+                elif wall_state == WallState.BROKEN:
+                    sprite = self.sprites.wall_sprites.broken
+                else:  # DESTROYED - shouldn't render, but just in case
+                    sprite = self.sprites.wall_sprites.destroyed
+                
+                screen.blit(sprite, wall.rect)
+            else:
+                # Fallback to colored rectangles
+                color = BRICK_COLOR if wall.wall_type == WallType.BRICK else WALL_COLOR
+                pygame.draw.rect(screen, color, wall.rect)
 
         # Food items
         for food in self.food_mgr.items:
             center = (int(food.position.x), int(food.position.y))
-            # Color varies by wave for visual interest
-            wave_colors = [
-                (255, 220, 80), (80, 230, 120), (120, 200, 255),
-                (255, 150, 80), (200, 120, 255),
-            ]
-            color = wave_colors[(food.wave - 1) % len(wave_colors)]
-            pygame.draw.circle(screen, color, center, FOOD_SIZE // 2)
+            if self.sprites.food_sprite is not None:
+                food_rect = self.sprites.food_sprite.get_rect(center=center)
+                screen.blit(self.sprites.food_sprite, food_rect)
+            else:
+                # Fallback to colored circles
+                wave_colors = [
+                    (255, 220, 80), (80, 230, 120), (120, 200, 255),
+                    (255, 150, 80), (200, 120, 255),
+                ]
+                color = wave_colors[(food.wave - 1) % len(wave_colors)]
+                pygame.draw.circle(screen, color, center, FOOD_SIZE // 2)
+
             # Score value label
             if food.score_value > 1:
                 font = pygame.font.SysFont("arial", 10)
@@ -403,11 +428,21 @@ class GameState:
 
         # Power-ups
         for item in self.powerup_mgr.items:
-            color = POWERUP_COLORS.get(item.powerup_type.value, (200, 200, 200))
             center = (int(item.position.x), int(item.position.y))
-            pygame.draw.circle(screen, color, center, POWERUP_SIZE // 2)
-            # Inner icon indicator
-            pygame.draw.circle(screen, (255, 255, 255), center, POWERUP_SIZE // 4)
+            if self.sprites.powerup_sprites is not None:
+                if item.powerup_type == PowerUpType.SPEED:
+                    sprite = self.sprites.powerup_sprites.speed
+                elif item.powerup_type == PowerUpType.SHIELD:
+                    sprite = self.sprites.powerup_sprites.shield
+                else:
+                    sprite = self.sprites.powerup_sprites.triple
+                item_rect = sprite.get_rect(center=center)
+                screen.blit(sprite, item_rect)
+            else:
+                color = POWERUP_COLORS.get(item.powerup_type.value, (200, 200, 200))
+                pygame.draw.circle(screen, color, center, POWERUP_SIZE // 2)
+                # Inner icon indicator
+                pygame.draw.circle(screen, (255, 255, 255), center, POWERUP_SIZE // 4)
 
         # Bullets
         for bullet in self.bullet_mgr.bullets:
