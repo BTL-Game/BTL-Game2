@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import math
+import time
+
 import pygame
 
 from game.config import (
@@ -11,10 +14,18 @@ from game.config import (
     SCORE_LIMIT,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
-    WALL_COLOR,
 )
 from game.entities.powerup import PowerUpType
 from game.entities.tank import Tank
+
+
+# ── Sci-fi colour palette ────────────────────────────────────────────────
+
+_NEON_CYAN = (0, 255, 255)
+_NEON_MAGENTA = (255, 0, 200)
+_NEON_BLUE = (80, 160, 255)
+_DARK_PANEL = (12, 14, 22)
+_PANEL_BORDER = (40, 60, 90)
 
 
 # ── Font cache (avoid re-creating every frame) ───────────────────────────
@@ -33,83 +44,269 @@ def _font(name: str, size: int, bold: bool = False) -> pygame.font.Font:
 # Screens
 # ══════════════════════════════════════════════════════════════════════════
 
-def draw_title_screen(screen: pygame.Surface) -> None:
-    title = _font("arial", 42).render("Tank Battle: Chaos Maze", True, (235, 235, 235))
-    sub = _font("arial", 20).render("Press Enter or Space to start", True, (180, 180, 180))
-
+def draw_title_screen(screen: pygame.Surface, selection: int = 0) -> None:
+    """Sci-fi themed main menu with Play / Settings buttons."""
     cx, cy = screen.get_rect().center
-    screen.blit(title, title.get_rect(center=(cx, cy - 30)))
-    screen.blit(sub, sub.get_rect(center=(cx, cy + 20)))
+    t = time.time()
 
-    # Controls hint
-    hint_font = _font("arial", 14)
+    # --- Animated background scanlines ---
+    for y in range(0, SCREEN_HEIGHT, 4):
+        alpha = int(8 + 4 * math.sin(y * 0.05 + t * 2))
+        line_surf = pygame.Surface((SCREEN_WIDTH, 2), pygame.SRCALPHA)
+        line_surf.fill((0, 255, 255, alpha))
+        screen.blit(line_surf, (0, y))
+
+    # --- Glowing border frame ---
+    glow_alpha = int(100 + 40 * math.sin(t * 3))
+    border_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    border_color = (_NEON_CYAN[0], _NEON_CYAN[1], _NEON_CYAN[2], glow_alpha)
+    pygame.draw.rect(border_surf, border_color, (20, 20, SCREEN_WIDTH - 40, SCREEN_HEIGHT - 40), 2, border_radius=12)
+    screen.blit(border_surf, (0, 0))
+
+    # --- Title with neon glow ---
+    title_font = _font("arial", 48, bold=True)
+    title_text = "TANK BATTLE: CHAOS MAZE"
+    # Glow layer
+    glow_surf = title_font.render(title_text, True, _NEON_CYAN)
+    glow_rect = glow_surf.get_rect(center=(cx, cy - 100))
+    glow_alpha_surf = pygame.Surface(glow_surf.get_size(), pygame.SRCALPHA)
+    glow_alpha_surf.blit(glow_surf, (0, 0))
+    glow_alpha_surf.set_alpha(int(120 + 60 * math.sin(t * 2)))
+    screen.blit(glow_alpha_surf, glow_rect.move(0, 2))
+    # Main title
+    title_surf = title_font.render(title_text, True, (235, 245, 255))
+    screen.blit(title_surf, title_surf.get_rect(center=(cx, cy - 100)))
+
+    # --- Subtitle ---
+    sub_font = _font("arial", 16)
+    sub_surf = sub_font.render("[ ENTER THE ARENA ]", True, _NEON_MAGENTA)
+    sub_alpha = int(140 + 80 * math.sin(t * 4))
+    sub_surf.set_alpha(sub_alpha)
+    screen.blit(sub_surf, sub_surf.get_rect(center=(cx, cy - 55)))
+
+    # --- Menu buttons ---
+    button_labels = ["PLAY", "SETTINGS"]
+    btn_font = _font("arial", 26, bold=True)
+    btn_w, btn_h = 220, 48
+    for i, label in enumerate(button_labels):
+        bx = cx - btn_w // 2
+        by = cy - 5 + i * 64
+        is_sel = i == selection
+
+        # Button panel
+        panel_color = (20, 30, 50) if not is_sel else (15, 40, 70)
+        pygame.draw.rect(screen, panel_color, (bx, by, btn_w, btn_h), border_radius=6)
+
+        # Border glow
+        border_c = _NEON_CYAN if is_sel else _PANEL_BORDER
+        pygame.draw.rect(screen, border_c, (bx, by, btn_w, btn_h), 2, border_radius=6)
+
+        if is_sel:
+            # animated glow edges
+            edge_surf = pygame.Surface((btn_w + 8, btn_h + 8), pygame.SRCALPHA)
+            edge_alpha = int(60 + 30 * math.sin(t * 5))
+            pygame.draw.rect(edge_surf, (_NEON_CYAN[0], _NEON_CYAN[1], _NEON_CYAN[2], edge_alpha),
+                             (0, 0, btn_w + 8, btn_h + 8), 3, border_radius=8)
+            screen.blit(edge_surf, (bx - 4, by - 4))
+
+        text_color = _NEON_CYAN if is_sel else (160, 170, 190)
+        lbl_surf = btn_font.render(label, True, text_color)
+        screen.blit(lbl_surf, lbl_surf.get_rect(center=(cx, by + btn_h // 2)))
+
+    # --- Controls hint ---
+    hint_font = _font("arial", 13)
     hints = [
         "P1: WASD move | Q/E turret | Space/F fire",
         "P2: Arrows move | N/Comma turret | Enter/M fire",
     ]
     for i, h in enumerate(hints):
-        surf = hint_font.render(h, True, (140, 140, 140))
-        screen.blit(surf, surf.get_rect(center=(cx, cy + 60 + i * 22)))
+        surf = hint_font.render(h, True, (90, 100, 120))
+        screen.blit(surf, surf.get_rect(center=(cx, cy + 175 + i * 20)))
+
+
+_MAP_DESCRIPTIONS: dict[str, str] = {
+    "Classic":  "A sprawling maze — master the corridors",
+    "Fortress": "Brick bastions divide every lane",
+    "Arena":    "Open ground — nowhere to hide",
+}
 
 
 def draw_map_select(screen: pygame.Surface, maps, selected_index: int) -> None:
-    title = _font("arial", 32).render("Select Map", True, HUD_COLOR)
+    """Sci-fi map selection screen with animated neon cards and mini-map previews."""
     cx, cy = screen.get_rect().center
-    screen.blit(title, title.get_rect(center=(cx, cy - 100)))
+    t = time.time()
 
-    prompt = _font("arial", 16).render("← → to browse  |  Enter to confirm", True, (160, 160, 160))
-    screen.blit(prompt, prompt.get_rect(center=(cx, cy - 60)))
+    # ── Shared animated background (same as title screen) ──
+    for scan_y in range(0, SCREEN_HEIGHT, 4):
+        alpha = int(8 + 4 * math.sin(scan_y * 0.05 + t * 2))
+        line_surf = pygame.Surface((SCREEN_WIDTH, 2), pygame.SRCALPHA)
+        line_surf.fill((0, 255, 255, alpha))
+        screen.blit(line_surf, (0, scan_y))
 
-    # Map cards
-    card_width = 180
-    total_width = len(maps) * card_width + (len(maps) - 1) * 20
-    start_x = cx - total_width // 2
+    # Glowing border frame
+    glow_alpha = int(100 + 40 * math.sin(t * 3))
+    border_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+    pygame.draw.rect(border_surf,
+                     (_NEON_CYAN[0], _NEON_CYAN[1], _NEON_CYAN[2], glow_alpha),
+                     (20, 20, SCREEN_WIDTH - 40, SCREEN_HEIGHT - 40), 2, border_radius=12)
+    screen.blit(border_surf, (0, 0))
+
+    # ── Title ──
+    title_font = _font("arial", 40, bold=True)
+    title_text = "SELECT ARENA"
+    glow_s = title_font.render(title_text, True, _NEON_CYAN)
+    glow_s.set_alpha(int(110 + 55 * math.sin(t * 2)))
+    screen.blit(glow_s, glow_s.get_rect(center=(cx, 60)))
+    screen.blit(title_font.render(title_text, True, (230, 240, 255)),
+                title_font.render(title_text, True, (230, 240, 255)).get_rect(center=(cx, 60)))
+
+    # Subtitle tag
+    tag = _font("arial", 14).render("[ ←→  NAVIGATE   ENTER  DEPLOY ]", True, _NEON_MAGENTA)
+    tag.set_alpha(int(150 + 70 * math.sin(t * 4)))
+    screen.blit(tag, tag.get_rect(center=(cx, 100)))
+
+    # ── Map cards ──
+    card_w, card_h = 224, 290
+    gap = 22
+    n = len(maps)
+    total_w = n * card_w + (n - 1) * gap
+    start_x = cx - total_w // 2
+    card_top = 125
 
     for i, m in enumerate(maps):
-        x = start_x + i * (card_width + 20)
-        y = cy - 20
-        is_selected = i == selected_index
+        cx_card = start_x + i * (card_w + gap) + card_w // 2
+        is_sel = i == selected_index
+
+        card_x = cx_card - card_w // 2
+        card_y = card_top
+
+        # Animated card lift for selected
+        if is_sel:
+            card_y -= int(4 + 3 * math.sin(t * 3))
+
+        # Card shadow (depth effect)
+        shadow = pygame.Surface((card_w, card_h), pygame.SRCALPHA)
+        shadow.fill((0, 0, 0, 80))
+        screen.blit(shadow, (card_x + 4, card_y + 4))
 
         # Card background
-        card_color = (60, 70, 90) if is_selected else (35, 35, 40)
-        border_color = (100, 180, 255) if is_selected else (60, 60, 70)
-        card_rect = pygame.Rect(x, y, card_width, 120)
-        pygame.draw.rect(screen, card_color, card_rect, border_radius=8)
-        pygame.draw.rect(screen, border_color, card_rect, 2, border_radius=8)
+        bg_color = (16, 26, 46) if is_sel else (12, 14, 22)
+        pygame.draw.rect(screen, bg_color, (card_x, card_y, card_w, card_h), border_radius=10)
 
-        # Map name
-        name_surf = _font("arial", 20).render(m.name, True, (235, 235, 235) if is_selected else (160, 160, 160))
-        screen.blit(name_surf, name_surf.get_rect(center=(x + card_width // 2, y + 30)))
+        # Outer neon border
+        border_col = _NEON_CYAN if is_sel else _PANEL_BORDER
+        pygame.draw.rect(screen, border_col, (card_x, card_y, card_w, card_h), 2, border_radius=10)
 
-        # Mini preview (tiny grid)
-        _draw_mini_map(screen, m.grid, x + 30, y + 50, card_width - 60, 55)
+        # Animated glow outline for selected card
+        if is_sel:
+            g_alpha = int(50 + 35 * math.sin(t * 5))
+            glow_rect_surf = pygame.Surface((card_w + 12, card_h + 12), pygame.SRCALPHA)
+            pygame.draw.rect(glow_rect_surf,
+                             (_NEON_CYAN[0], _NEON_CYAN[1], _NEON_CYAN[2], g_alpha),
+                             (0, 0, card_w + 12, card_h + 12), 3, border_radius=13)
+            screen.blit(glow_rect_surf, (card_x - 6, card_y - 6))
+
+        # ── Header strip ──
+        header_h = 38
+        header_col = (20, 50, 80) if is_sel else (18, 22, 35)
+        pygame.draw.rect(screen, header_col,
+                         (card_x + 2, card_y + 2, card_w - 4, header_h), border_radius=9)
+
+        name_col = _NEON_CYAN if is_sel else (140, 155, 180)
+        name_surf = _font("arial", 20, bold=True).render(m.name.upper(), True, name_col)
+        screen.blit(name_surf, name_surf.get_rect(center=(cx_card, card_y + 2 + header_h // 2)))
+
+        # ── Mini-map preview ──
+        preview_pad = 10
+        preview_x = card_x + preview_pad
+        preview_y = card_y + header_h + 8
+        preview_w = card_w - preview_pad * 2
+        preview_h = 170
+        _draw_mini_map(screen, m.grid, preview_x, preview_y, preview_w, preview_h,
+                       neon=is_sel)
+
+        # ── Description ──
+        desc = _MAP_DESCRIPTIONS.get(m.name, "")
+        desc_col = (160, 200, 230) if is_sel else (90, 100, 120)
+        desc_surf = _font("arial", 12).render(desc, True, desc_col)
+        desc_y = preview_y + preview_h + 10
+        screen.blit(desc_surf, desc_surf.get_rect(center=(cx_card, desc_y)))
+
+        # ── "SELECTED" badge ──
+        if is_sel:
+            badge_y = desc_y + 18
+            badge_surf = _font("arial", 11, bold=True).render("▶  SELECTED  ◀", True, _NEON_CYAN)
+            badge_surf.set_alpha(int(160 + 80 * math.sin(t * 5)))
+            screen.blit(badge_surf, badge_surf.get_rect(center=(cx_card, badge_y)))
+
+    # ── Side navigation arrows ──
+    arr_y = card_top + card_h // 2
+    arr_font = _font("arial", 36, bold=True)
+    left_arr = arr_font.render("◀", True, _NEON_CYAN if selected_index > 0 else (40, 50, 65))
+    right_arr = arr_font.render("▶", True, _NEON_CYAN if selected_index < len(maps) - 1 else (40, 50, 65))
+    screen.blit(left_arr, left_arr.get_rect(midright=(start_x - 14, arr_y)))
+    screen.blit(right_arr, right_arr.get_rect(midleft=(start_x + total_w + 14, arr_y)))
+
+    # ── Map index dots ──
+    dot_y = card_top + card_h + 24
+    for i in range(n):
+        dot_col = _NEON_CYAN if i == selected_index else (40, 55, 75)
+        dot_r = 5 if i == selected_index else 3
+        dot_x = cx + (i - n // 2) * 20
+        pygame.draw.circle(screen, dot_col, (dot_x, dot_y), dot_r)
 
 
-def _draw_mini_map(screen: pygame.Surface, grid: list[str], x: int, y: int, w: int, h: int) -> None:
+def _draw_mini_map(screen: pygame.Surface, grid: list[str],
+                   x: int, y: int, w: int, h: int,
+                   neon: bool = False) -> None:
+    """Render a small grid preview using sci-fi-tinted colors."""
     rows = len(grid)
     cols = max(len(r) for r in grid) if grid else 1
     cell_w = max(1, w // cols)
     cell_h = max(1, h // rows)
 
+    # Background fill
+    bg = pygame.Surface((w, h), pygame.SRCALPHA)
+    bg.fill((8, 10, 18, 220))
+    screen.blit(bg, (x, y))
+
+    # Subtle grid lines
+    grid_col = (25, 35, 55) if neon else (18, 22, 30)
+    for ci in range(cols + 1):
+        px = x + ci * cell_w
+        pygame.draw.line(screen, grid_col, (px, y), (px, y + h))
+    for ri in range(rows + 1):
+        py = y + ri * cell_h
+        pygame.draw.line(screen, grid_col, (x, py), (x + w, py))
+
     for ri, row in enumerate(grid):
         for ci, ch in enumerate(row):
-            px = x + ci * cell_w
-            py = y + ri * cell_h
-            if ch == "#":
-                pygame.draw.rect(screen, (80, 80, 90), (px, py, cell_w, cell_h))
-            elif ch == "B":
-                pygame.draw.rect(screen, (130, 80, 40), (px, py, cell_w, cell_h))
-            elif ch == "1":
-                pygame.draw.rect(screen, PLAYER1_COLOR, (px, py, cell_w, cell_h))
-            elif ch == "2":
-                pygame.draw.rect(screen, PLAYER2_COLOR, (px, py, cell_w, cell_h))
+            px = x + ci * cell_w + 1
+            py = y + ri * cell_h + 1
+            cw = max(1, cell_w - 1)
+            ch_px = max(1, cell_h - 1)
+            if ch == "#":        # steel wall
+                color = (50, 65, 95) if neon else (45, 50, 65)
+                pygame.draw.rect(screen, color, (px, py, cw, ch_px))
+            elif ch == "B":      # brick wall
+                color = (160, 80, 30) if neon else (110, 60, 25)
+                pygame.draw.rect(screen, color, (px, py, cw, ch_px))
+            elif ch == "1":      # P1 spawn
+                color = PLAYER1_COLOR
+                pygame.draw.rect(screen, color, (px, py, cw, ch_px))
+            elif ch == "2":      # P2 spawn
+                color = PLAYER2_COLOR
+                pygame.draw.rect(screen, color, (px, py, cw, ch_px))
+
+    # Neon border around preview
+    border_col = (0, 160, 180) if neon else (30, 40, 60)
+    pygame.draw.rect(screen, border_col, (x, y, w, h), 1)
 
 
 # ── In-game HUD ──────────────────────────────────────────────────────────
 
 def draw_hud(screen: pygame.Surface, p1: Tank, p2: Tank, scores: dict[int, int], round_num: int, round_wins: dict[int, int]) -> None:
     font = _font("arial", 18, bold=True)
-    small = _font("arial", 14)
 
     # P1 info (left)
     p1_text = f"P1  HP: {p1.health}  Score: {scores[1]}/{SCORE_LIMIT}"
@@ -118,11 +315,8 @@ def draw_hud(screen: pygame.Surface, p1: Tank, p2: Tank, scores: dict[int, int],
     pygame.draw.rect(screen, BG_COLOR, left_rect.inflate(8, 6))
     screen.blit(left, left_rect)
 
-    # P1 active power-ups
-    p1_pups = _powerup_text(p1)
-    if p1_pups:
-        pup_surf = small.render(p1_pups, True, (180, 220, 180))
-        screen.blit(pup_surf, (12, 28))
+    # P1 active power-ups (sci-fi bars)
+    _draw_powerup_ui(screen, p1, x=12, y=30, align_right=False)
 
     # P2 info (right)
     p2_text = f"P2  HP: {p2.health}  Score: {scores[2]}/{SCORE_LIMIT}"
@@ -131,12 +325,8 @@ def draw_hud(screen: pygame.Surface, p1: Tank, p2: Tank, scores: dict[int, int],
     pygame.draw.rect(screen, BG_COLOR, right_rect.inflate(8, 6))
     screen.blit(right, right_rect)
 
-    # P2 active power-ups
-    p2_pups = _powerup_text(p2)
-    if p2_pups:
-        pup_surf = small.render(p2_pups, True, (180, 220, 180))
-        pup_rect = pup_surf.get_rect(topright=(screen.get_width() - 12, 28))
-        screen.blit(pup_surf, pup_rect)
+    # P2 active power-ups (sci-fi bars)
+    _draw_powerup_ui(screen, p2, x=screen.get_width() - 12, y=30, align_right=True)
 
     # Round info (center top) with win counters on either side
     round_font = _font("arial", 22, bold=True)
@@ -159,13 +349,66 @@ def draw_hud(screen: pygame.Surface, p1: Tank, p2: Tank, scores: dict[int, int],
     screen.blit(p2_wins_surf, p2_wins_rect)
 
 
-def _powerup_text(tank: Tank) -> str:
-    names = {PowerUpType.SPEED: "⚡SPD", PowerUpType.SHIELD: "🛡SHD", PowerUpType.TRIPLE: "🔱TRI"}
-    parts = []
-    for ptype, remaining in tank.active_powerups.items():
-        label = names.get(ptype, ptype.value)
-        parts.append(f"{label} {remaining:.1f}s")
-    return "  ".join(parts)
+# ── Sci-Fi Powerup HUD ──────────────────────────────────────────────────
+
+_POWERUP_META: dict[PowerUpType, tuple[str, tuple[int, int, int], float]] = {
+    PowerUpType.SPEED: ("SPD", POWERUP_COLORS["speed"], 5.0),
+    PowerUpType.SHIELD: ("SHD", POWERUP_COLORS["shield"], 8.0),
+    PowerUpType.TRIPLE: ("TRI", POWERUP_COLORS["triple"], 6.0),
+}
+
+
+def _draw_powerup_ui(screen: pygame.Surface, tank: Tank,
+                     x: int, y: int, align_right: bool) -> None:
+    """Render sleek neon progress bars for each active powerup."""
+    if not tank.active_powerups:
+        return
+
+    bar_w = 110
+    bar_h = 14
+    spacing = 3
+    label_font = _font("arial", 11, bold=True)
+    t = time.time()
+
+    for idx, (ptype, remaining) in enumerate(tank.active_powerups.items()):
+        meta = _POWERUP_META.get(ptype)
+        if meta is None:
+            continue
+        label, base_color, max_dur = meta
+        ratio = max(0.0, min(1.0, remaining / max_dur))
+
+        by = y + idx * (bar_h + spacing)
+        if align_right:
+            bx = x - bar_w
+        else:
+            bx = x
+
+        # Translucent background panel
+        panel = pygame.Surface((bar_w, bar_h), pygame.SRCALPHA)
+        panel.fill((10, 12, 20, 180))
+        screen.blit(panel, (bx, by))
+
+        # Filled portion with glow
+        fill_w = int((bar_w - 2) * ratio)
+        if fill_w > 0:
+            glow_alpha = int(180 + 40 * math.sin(t * 6 + idx))
+            fill_color = (base_color[0], base_color[1], base_color[2], glow_alpha)
+            fill_surf = pygame.Surface((fill_w, bar_h - 2), pygame.SRCALPHA)
+            fill_surf.fill(fill_color)
+            screen.blit(fill_surf, (bx + 1, by + 1))
+
+        # Neon border
+        border_alpha = int(160 + 50 * math.sin(t * 4 + idx * 2))
+        border_surf = pygame.Surface((bar_w, bar_h), pygame.SRCALPHA)
+        border_c = (base_color[0], base_color[1], base_color[2], border_alpha)
+        pygame.draw.rect(border_surf, border_c, (0, 0, bar_w, bar_h), 1, border_radius=3)
+        screen.blit(border_surf, (bx, by))
+
+        # Label
+        lbl = label_font.render(f"{label} {remaining:.1f}s", True, (230, 240, 255))
+        lbl_rect = lbl.get_rect(midleft=(bx + 4, by + bar_h // 2)) if not align_right \
+            else lbl.get_rect(midright=(bx + bar_w - 4, by + bar_h // 2))
+        screen.blit(lbl, lbl_rect)
 
 
 # ── Overlay screens ──────────────────────────────────────────────────────
@@ -206,77 +449,83 @@ def draw_match_winner(screen: pygame.Surface, winner_id: int, scores: dict[int, 
     screen.blit(prompt, prompt.get_rect(center=(cx, cy + 50)))
 
 
-def draw_pause_menu(screen: pygame.Surface, selection: int, sfx_volume: float, music_volume: float) -> None:
-    """Draw pause/options menu overlay with volume controls."""
+def draw_pause_menu(screen: pygame.Surface, selection: int, sfx_volume: float,
+                    music_volume: float, *, title_text: str = "PAUSED",
+                    show_return: bool = False, return_label: str = "Return to Main Menu") -> None:
+    """Draw pause/settings overlay with volume controls and optional return button."""
     overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
     overlay.fill((0, 0, 0, 180))
     screen.blit(overlay, (0, 0))
 
     cx, cy = screen.get_rect().center
+    t = time.time()
 
-    title = _font("arial", 36).render("PAUSED", True, HUD_COLOR)
-    screen.blit(title, title.get_rect(center=(cx, cy - 80)))
+    # --- Neon title ---
+    title_font = _font("arial", 36, bold=True)
+    glow = title_font.render(title_text, True, _NEON_CYAN)
+    glow.set_alpha(int(100 + 50 * math.sin(t * 3)))
+    screen.blit(glow, glow.get_rect(center=(cx, cy - 100)))
+    title = title_font.render(title_text, True, (230, 240, 255))
+    screen.blit(title, title.get_rect(center=(cx, cy - 100)))
 
     # Volume controls
     option_font = _font("arial", 20)
     value_font = _font("arial", 18)
     
-    # SFX Volume
-    sfx_y = cy - 20
-    sfx_color = (100, 180, 255) if selection == 0 else (180, 180, 180)
-    sfx_text = option_font.render("SFX Volume", True, sfx_color)
-    screen.blit(sfx_text, sfx_text.get_rect(midright=(cx - 20, sfx_y)))
-    
-    # SFX volume bar
     bar_width = 200
     bar_height = 20
     bar_x = cx + 10
-    bar_y = sfx_y - bar_height // 2
-    
-    # Background bar
-    pygame.draw.rect(screen, (60, 60, 70), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
-    # Filled bar
-    filled_width = int(bar_width * sfx_volume)
-    if filled_width > 0:
-        pygame.draw.rect(screen, (100, 180, 255), (bar_x, bar_y, filled_width, bar_height), border_radius=4)
-    # Border
-    pygame.draw.rect(screen, sfx_color, (bar_x, bar_y, bar_width, bar_height), 2, border_radius=4)
-    
-    # SFX percentage
-    sfx_pct = value_font.render(f"{int(sfx_volume * 100)}", True, sfx_color)
-    screen.blit(sfx_pct, sfx_pct.get_rect(midleft=(bar_x + bar_width + 10, sfx_y)))
-    
-    # Music Volume
-    music_y = cy + 30
-    music_color = (100, 180, 255) if selection == 1 else (180, 180, 180)
-    music_text = option_font.render("Music Volume", True, music_color)
-    screen.blit(music_text, music_text.get_rect(midright=(cx - 20, music_y)))
-    
-    # Music volume bar
-    bar_y = music_y - bar_height // 2
-    
-    # Background bar
-    pygame.draw.rect(screen, (60, 60, 70), (bar_x, bar_y, bar_width, bar_height), border_radius=4)
-    # Filled bar
-    filled_width = int(bar_width * music_volume)
-    if filled_width > 0:
-        pygame.draw.rect(screen, (100, 180, 255), (bar_x, bar_y, filled_width, bar_height), border_radius=4)
-    # Border
-    pygame.draw.rect(screen, music_color, (bar_x, bar_y, bar_width, bar_height), 2, border_radius=4)
-    
-    # Music percentage
-    music_pct = value_font.render(f"{int(music_volume * 100)}", True, music_color)
-    screen.blit(music_pct, music_pct.get_rect(midleft=(bar_x + bar_width + 10, music_y)))
+
+    def _draw_volume_row(label: str, volume: float, row_y: int, sel_idx: int) -> None:
+        is_sel = selection == sel_idx
+        color = _NEON_CYAN if is_sel else (140, 150, 170)
+        lbl = option_font.render(label, True, color)
+        screen.blit(lbl, lbl.get_rect(midright=(cx - 20, row_y)))
+
+        by = row_y - bar_height // 2
+        # Background bar
+        pygame.draw.rect(screen, (30, 35, 50), (bar_x, by, bar_width, bar_height), border_radius=4)
+        # Filled bar
+        filled = int(bar_width * volume)
+        if filled > 0:
+            fill_color = _NEON_CYAN if is_sel else (60, 90, 140)
+            pygame.draw.rect(screen, fill_color, (bar_x, by, filled, bar_height), border_radius=4)
+        # Neon border
+        pygame.draw.rect(screen, color, (bar_x, by, bar_width, bar_height), 2, border_radius=4)
+        # Percentage
+        pct = value_font.render(f"{int(volume * 100)}", True, color)
+        screen.blit(pct, pct.get_rect(midleft=(bar_x + bar_width + 10, row_y)))
+
+    _draw_volume_row("SFX Volume", sfx_volume, cy - 20, 0)
+    _draw_volume_row("Music Volume", music_volume, cy + 30, 1)
+
+    # --- Return / Back button ---
+    if show_return:
+        btn_y = cy + 75
+        is_sel = selection == 2
+        btn_w, btn_h = 280, 40
+        bx = cx - btn_w // 2
+
+        panel_c = (20, 30, 50) if not is_sel else (15, 40, 70)
+        pygame.draw.rect(screen, panel_c, (bx, btn_y, btn_w, btn_h), border_radius=6)
+        border_c = _NEON_MAGENTA if is_sel else _PANEL_BORDER
+        pygame.draw.rect(screen, border_c, (bx, btn_y, btn_w, btn_h), 2, border_radius=6)
+
+        text_c = _NEON_MAGENTA if is_sel else (160, 160, 180)
+        btn_font = _font("arial", 20, bold=True)
+        btn_surf = btn_font.render(return_label, True, text_c)
+        screen.blit(btn_surf, btn_surf.get_rect(center=(cx, btn_y + btn_h // 2)))
 
     # Instructions
     hint_font = _font("arial", 14)
+    bottom_y = cy + 130 if show_return else cy + 90
     hints = [
         "↑↓ / WS: Select   ←→ / AD: Adjust",
-        "ESC: Resume Game"
+        "ESC: Resume Game" if title_text == "PAUSED" else "ESC: Back",
     ]
     for i, hint in enumerate(hints):
-        hint_surf = hint_font.render(hint, True, (140, 140, 140))
-        screen.blit(hint_surf, hint_surf.get_rect(center=(cx, cy + 90 + i * 20)))
+        hint_surf = hint_font.render(hint, True, (90, 100, 120))
+        screen.blit(hint_surf, hint_surf.get_rect(center=(cx, bottom_y + i * 20)))
 
 
 def draw_countdown(screen: pygame.Surface, time_left: float) -> None:

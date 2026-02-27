@@ -99,10 +99,14 @@ class GameState:
         self._explosion_pos: pygame.Vector2 = pygame.Vector2(0, 0)
         # ESC key tracking for pause menu
         self._esc_pressed: bool = False
-        # Pause menu state: 0 = SFX, 1 = Music
+        # Pause menu state: 0 = SFX, 1 = Music, 2 = Return to Main Menu
         self._pause_menu_selection: int = 0
         # Countdown timer (3-2-1) before gameplay starts
         self._countdown_timer: float = 0.0
+        # Title screen menu selection: 0 = Play, 1 = Settings
+        self._title_selection: int = 0
+        # Settings menu selection (reuses pause-menu volume controls from title)
+        self._settings_selection: int = 0
 
     # ── public interface ──────────────────────────────────────────────────
 
@@ -111,9 +115,10 @@ class GameState:
         keys = pygame.key.get_pressed()
 
         if self.mode == "title":
-            if self._menu_confirm(keys):
-                self.mode = "map_select"
-                self._key_cooldown = 0.25
+            self._update_title(keys)
+
+        elif self.mode == "settings":
+            self._update_settings(keys)
 
         elif self.mode == "map_select":
             self._update_map_select(keys)
@@ -147,7 +152,14 @@ class GameState:
         screen.fill(BG_COLOR)
 
         if self.mode == "title":
-            draw_title_screen(screen)
+            draw_title_screen(screen, self._title_selection)
+
+        elif self.mode == "settings":
+            sfx_vol = self.sound_mgr.get_sfx_volume()
+            music_vol = self.sound_mgr.get_music_volume()
+            draw_title_screen(screen, self._title_selection)
+            draw_pause_menu(screen, self._settings_selection, sfx_vol, music_vol,
+                            title_text="SETTINGS", show_return=True, return_label="Back")
 
         elif self.mode == "map_select":
             draw_map_select(screen, ALL_MAPS, self.map_index)
@@ -159,7 +171,8 @@ class GameState:
             self._render_play(screen)
             sfx_vol = self.sound_mgr.get_sfx_volume()
             music_vol = self.sound_mgr.get_music_volume()
-            draw_pause_menu(screen, self._pause_menu_selection, sfx_vol, music_vol)
+            draw_pause_menu(screen, self._pause_menu_selection, sfx_vol, music_vol,
+                            show_return=True, return_label="Return to Main Menu")
 
         elif self.mode == "countdown":
             self._render_play(screen)
@@ -309,10 +322,63 @@ class GameState:
             self._round_over_timer = 1.0
             self.mode = "round_over"
 
-    def _update_pause_menu(self, keys) -> None:
-        """Handle input in pause menu for volume controls."""
+    # ── title screen ──────────────────────────────────────────────────────
+
+    def _update_title(self, keys) -> None:
+        """Navigate the main menu (Play / Settings)."""
+        if self._key_cooldown > 0:
+            return
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            self._title_selection = (self._title_selection - 1) % 2
+            self._key_cooldown = 0.18
+        elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            self._title_selection = (self._title_selection + 1) % 2
+            self._key_cooldown = 0.18
+        elif self._menu_confirm(keys):
+            if self._title_selection == 0:  # Play
+                self.mode = "map_select"
+            else:  # Settings
+                self._settings_selection = 0
+                self.mode = "settings"
+            self._key_cooldown = 0.25
+
+    def _update_settings(self, keys) -> None:
+        """Volume settings accessible from the main menu."""
         from game.config import VOLUME_STEP
-        
+
+        if self._key_cooldown > 0:
+            return
+
+        # Handle ESC or Confirm on "Back" to return to title
+        if keys[pygame.K_ESCAPE] and not self._esc_pressed:
+            self._esc_pressed = True
+            self.mode = "title"
+            self._key_cooldown = 0.25
+            return
+        if not keys[pygame.K_ESCAPE]:
+            self._esc_pressed = False
+
+        max_sel = 2  # 0=SFX, 1=Music, 2=Back
+        if keys[pygame.K_UP] or keys[pygame.K_w]:
+            self._settings_selection = (self._settings_selection - 1) % (max_sel + 1)
+            self._key_cooldown = 0.15
+        elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
+            self._settings_selection = (self._settings_selection + 1) % (max_sel + 1)
+            self._key_cooldown = 0.15
+        elif self._menu_confirm(keys) and self._settings_selection == 2:
+            self.mode = "title"
+            self._key_cooldown = 0.25
+        elif keys[pygame.K_LEFT] or keys[pygame.K_a]:
+            self._adjust_volume(self._settings_selection, -VOLUME_STEP)
+            self._key_cooldown = 0.12
+        elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
+            self._adjust_volume(self._settings_selection, VOLUME_STEP)
+            self._key_cooldown = 0.12
+
+    def _update_pause_menu(self, keys) -> None:
+        """Handle input in pause menu for volume controls + Return to Main Menu."""
+        from game.config import VOLUME_STEP
+
         # Handle ESC to unpause
         if keys[pygame.K_ESCAPE] and not self._esc_pressed:
             self._esc_pressed = True
@@ -321,36 +387,38 @@ class GameState:
             self.mode = "countdown"
         if not keys[pygame.K_ESCAPE]:
             self._esc_pressed = False
-        
+
         # Cooldown for menu navigation
         if self._key_cooldown > 0:
             return
-        
-        # Navigate between SFX and Music
+
+        max_sel = 2  # 0=SFX, 1=Music, 2=Return to Main Menu
+        # Navigate
         if keys[pygame.K_UP] or keys[pygame.K_w]:
-            self._pause_menu_selection = 0  # SFX
+            self._pause_menu_selection = (self._pause_menu_selection - 1) % (max_sel + 1)
             self._key_cooldown = 0.15
         elif keys[pygame.K_DOWN] or keys[pygame.K_s]:
-            self._pause_menu_selection = 1  # Music
+            self._pause_menu_selection = (self._pause_menu_selection + 1) % (max_sel + 1)
             self._key_cooldown = 0.15
-        
+        # Confirm on "Return to Main Menu"
+        elif self._menu_confirm(keys) and self._pause_menu_selection == 2:
+            self._pause_menu_selection = 0
+            self.mode = "title"
+            self._key_cooldown = 0.25
         # Adjust volume
         elif keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            if self._pause_menu_selection == 0:
-                new_vol = self.sound_mgr.get_sfx_volume() - VOLUME_STEP
-                self.sound_mgr.set_sfx_volume(new_vol)
-            else:
-                new_vol = self.sound_mgr.get_music_volume() - VOLUME_STEP
-                self.sound_mgr.set_music_volume(new_vol)
+            self._adjust_volume(self._pause_menu_selection, -VOLUME_STEP)
             self._key_cooldown = 0.12
         elif keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            if self._pause_menu_selection == 0:
-                new_vol = self.sound_mgr.get_sfx_volume() + VOLUME_STEP
-                self.sound_mgr.set_sfx_volume(new_vol)
-            else:
-                new_vol = self.sound_mgr.get_music_volume() + VOLUME_STEP
-                self.sound_mgr.set_music_volume(new_vol)
+            self._adjust_volume(self._pause_menu_selection, VOLUME_STEP)
             self._key_cooldown = 0.12
+
+    def _adjust_volume(self, selection: int, delta: float) -> None:
+        """Adjust SFX (0) or Music (1) volume by *delta*. Ignore other indices."""
+        if selection == 0:
+            self.sound_mgr.set_sfx_volume(self.sound_mgr.get_sfx_volume() + delta)
+        elif selection == 1:
+            self.sound_mgr.set_music_volume(self.sound_mgr.get_music_volume() + delta)
 
     def _handle_tank_input(self, player_id: int, controls, keys, dt: float) -> None:
         tank = self.tanks[player_id]
@@ -365,9 +433,14 @@ class GameState:
         # make the turret follow the tank body's rotation delta
         tank.turret_rotation_deg += (tank.rotation_deg - previous_rotation)
 
-        # Collision resolution (split X/Y)
+        # Collision resolution (split X/Y) – treat the other tank as solid
+        other_id = 2 if player_id == 1 else 1
+        other_tank = self.tanks[other_id]
         active_walls = [w for w in self.walls if not w.is_destroyed]
-        tank.position = self.collision_mgr.resolve_tank_walls(tank.position, previous, active_walls)
+        tank.position = self.collision_mgr.resolve_tank_walls(
+            tank.position, previous, active_walls,
+            other_tank_rect=other_tank.get_rect(),
+        )
 
         # Shooting
         if (keys[controls.fire] or keys[controls.fire_alt]) and self.bullet_mgr.can_fire(player_id):

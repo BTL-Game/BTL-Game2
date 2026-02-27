@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import logging
 
 import pygame
 
@@ -8,6 +9,7 @@ from game.config import DEFAULT_MUSIC_VOLUME, DEFAULT_SFX_VOLUME
 
 
 SOUND_DIR = Path(__file__).resolve().parents[3] / "assets" / "sounds"
+_log = logging.getLogger(__name__)
 
 
 class SoundManager:
@@ -28,7 +30,7 @@ class SoundManager:
                 pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
             except pygame.error:
                 self._enabled = False
-                print("[SoundManager] Warning: pygame.mixer failed to initialize; audio disabled.")
+                _log.warning("pygame.mixer failed to initialize; audio disabled.")
                 return
 
         self._sounds = {
@@ -69,7 +71,6 @@ class SoundManager:
 
     def get_sfx_volume(self) -> float:
         """Get current SFX volume."""
-        self._music_volume
         return self._sfx_volume
 
     def get_music_volume(self) -> float:
@@ -90,31 +91,31 @@ class SoundManager:
             return
         path = SOUND_DIR / "backgroundmusic.mp3"
         if not path.exists():
-            print(f"[SoundManager] Missing background music: {path}")
+            _log.debug("Missing background music: %s", path)
             return
         try:
             pygame.mixer.music.load(str(path))
             pygame.mixer.music.set_volume(self._music_volume)
             pygame.mixer.music.play(-1)  # -1 means loop forever
-            print("[SoundManager] Background music started.")
+            _log.info("Background music started.")
         except pygame.error as e:
-            print(f"[SoundManager] Failed to load background music: {e}")
+            _log.debug("Failed to load background music: %s", e)
 
     def _load(self, filename: str) -> pygame.mixer.Sound | None:
         path = SOUND_DIR / filename
         if not path.exists():
-            print(f"[SoundManager] Missing sound file: {path}")
+            _log.debug("Missing sound file: %s", path)
             return None
         try:
             return pygame.mixer.Sound(str(path))
         except pygame.error:
-            print(f"[SoundManager] Failed to load sound: {path}")
+            _log.debug("Failed to load sound: %s", path)
             return None
 
     def _play(self, name: str) -> None:
         if not self._enabled:
             if not self._warned_disabled:
-                print("[SoundManager] Audio disabled; cannot play sounds.")
+                _log.info("Audio disabled; cannot play sounds.")
                 self._warned_disabled = True
             return
         sound = self._sounds.get(name)
