@@ -220,6 +220,7 @@ class GameState:
         self.round_wins = {1: 0, 2: 0}
         self.round_number = 0
         self.match_winner_id = None
+        self.food_mgr.reset()  # Clean up food items from the previous match
         self._load_map()
         self._start_round()  # This sets mode to "countdown"
         # Spawn initial food for the match

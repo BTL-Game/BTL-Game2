@@ -50,7 +50,7 @@ SCORE_LIMIT = 30  # first player to reach this score (by collecting food) wins
 # ---------------------------------------------------------------------------
 # Food (scoring items)
 # ---------------------------------------------------------------------------
-FOOD_SIZE = TILE_SIZE // 2  # exactly half a wall tile (20px)
+FOOD_SIZE = TILE_SIZE  # exactly half a wall tile (20px)
 FOOD_INITIAL_COUNT = 8       # food items spawned at match start
 FOOD_SPAWN_INTERVAL = 6.0    # seconds between respawn waves
 FOOD_MAX_ON_MAP = 15         # maximum food items on map at once
@@ -62,7 +62,7 @@ FOOD_SCORE_INCREMENT = 0     # added per wave (all food worth 1pt now)
 # ---------------------------------------------------------------------------
 POWERUP_SPAWN_INTERVAL = 8.0   # seconds between spawn attempts
 POWERUP_MAX_ON_MAP = 2
-POWERUP_SIZE = 24
+POWERUP_SIZE = TILE_SIZE
 
 SPEED_BOOST_MULTIPLIER = 1.5
 SPEED_BOOST_DURATION = 5.0

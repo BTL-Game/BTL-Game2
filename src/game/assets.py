@@ -144,7 +144,7 @@ def load_sprites() -> SpriteSet:
         bg_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
     except Exception:
         bg_size = None
-    background = _load_image(ASSET_ROOT / "background" / BACKGROUND_NAME, bg_size)
+    background = _load_image(ASSET_ROOT / "Background" / BACKGROUND_NAME, bg_size)
 
     return SpriteSet(
         tank_blue=_build_tank_sprites(blue_body, blue_turret),
