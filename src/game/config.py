@@ -45,7 +45,8 @@ BULLET_MAX_BOUNCES = 5
 # Health & Scoring
 # ---------------------------------------------------------------------------
 PLAYER_HEALTH = 3
-SCORE_LIMIT = 30  # first player to reach this score (by collecting food) wins
+SCORE_LIMIT = 30      # food score needed to win a round
+ROUND_WIN_LIMIT = 5   # first player to win this many rounds wins the match
 
 # ---------------------------------------------------------------------------
 # Food (scoring items)

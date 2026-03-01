@@ -15,6 +15,7 @@ from game.config import (
     PLAYER2_COLOR,
     POWERUP_COLORS,
     POWERUP_SIZE,
+    ROUND_WIN_LIMIT,
     SCORE_LIMIT,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
@@ -187,13 +188,14 @@ class GameState:
                 screen.blit(self._explosion_sprite, explosion_rect)
             
             killed_id = 1 if self.winner_id == 2 else 2
-            winner_text = f"Player {self.winner_id} eliminated Player {killed_id}!"
-            draw_game_over(screen, winner_text, f"Round {self.round_number}  |  "
-                           f"P1: {self.scores[1]}  P2: {self.scores[2]}")
+            winner_text = f"Player {self.winner_id} wins Round {self.round_number}!"
+            draw_game_over(screen, winner_text, f"Rounds Won  |  "
+                           f"P1: {self.round_wins[1]}  /  P2: {self.round_wins[2]}  "
+                           f"(first to {ROUND_WIN_LIMIT})")
 
         elif self.mode == "match_over":
             self._render_play(screen)
-            draw_match_winner(screen, self.match_winner_id or 1, self.scores)
+            draw_match_winner(screen, self.match_winner_id or 1, self.round_wins)
 
     # ── map select ────────────────────────────────────────────────────────
 
@@ -234,6 +236,7 @@ class GameState:
 
     def _start_round(self) -> None:
         self.round_number += 1
+        self.scores = {1: 0, 2: 0}  # reset food score each round
         self.tanks = {
             1: Tank(position=self.current_map.spawn_p1.copy(), rotation_deg=90.0, turret_rotation_deg=90.0),
             2: Tank(position=self.current_map.spawn_p2.copy(), rotation_deg=-90.0, turret_rotation_deg=-90.0),
@@ -283,12 +286,11 @@ class GameState:
             self.scores[pid] += score_val
             self.sound_mgr.play_powerup()  # reuse powerup sound for food
 
-        # Check if any player reached score limit via food
+        # Check if any player reached score limit via food → win the round
         for pid in (1, 2):
-            if self.scores[pid] >= SCORE_LIMIT and self.match_winner_id is None:
-                self.match_winner_id = pid
-                self.mode = "match_over"
-                return
+            if self.scores[pid] >= SCORE_LIMIT and round_winner is None and self.winner_id is None:
+                round_winner = pid
+                break
 
         # Power-ups
         pickups = self.powerup_mgr.update(dt, self.tanks)
@@ -298,26 +300,33 @@ class GameState:
         # Particles
         self.particle_mgr.update(dt)
 
-        # Round-end on kill (reset round, NOT score)
+        # Round-end on kill OR reaching food score limit
         if round_winner is not None:
             self.winner_id = round_winner
             self.round_wins[round_winner] += 1  # increment round win counter
 
-            # Spawn explosion at killed tank
-            killed_id = 1 if round_winner == 2 else 2
-            killed_tank = self.tanks[killed_id]
-            color = PLAYER1_COLOR if killed_id == 1 else PLAYER2_COLOR
-            self.particle_mgr.spawn_explosion(killed_tank.position.copy(), color)
-            self.sound_mgr.play_explosion()
+            # Check if this round win clinches the match
+            if self.round_wins[round_winner] >= ROUND_WIN_LIMIT:
+                self.match_winner_id = round_winner
+                self.mode = "match_over"
+                return
 
-            # Store explosion sprite for display during round_over
-            explosion_sprite = self.sprites.explosion_blue if killed_id == 1 else self.sprites.explosion_red
-            if explosion_sprite is not None:
-                self._explosion_sprite = explosion_sprite
-                self._explosion_pos = killed_tank.position.copy()
+            # Spawn explosion at killed tank (only for kill rounds)
+            killed_id = 1 if round_winner == 2 else 2
+            if self.tanks[killed_id].health <= 0:
+                killed_tank = self.tanks[killed_id]
+                color = PLAYER1_COLOR if killed_id == 1 else PLAYER2_COLOR
+                self.particle_mgr.spawn_explosion(killed_tank.position.copy(), color)
+                self.sound_mgr.play_explosion()
+
+                # Store explosion sprite for display during round_over
+                explosion_sprite = self.sprites.explosion_blue if killed_id == 1 else self.sprites.explosion_red
+                if explosion_sprite is not None:
+                    self._explosion_sprite = explosion_sprite
+                    self._explosion_pos = killed_tank.position.copy()
 
             # Prevent immediately skipping the round-over screen (e.g. from a
-            # held key). Give players a short moment to see the explosion.
+            # held key). Give players a short moment to see the result.
             self._round_over_timer = 1.0
             self.mode = "round_over"
 

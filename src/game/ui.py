@@ -452,10 +452,10 @@ def draw_match_winner(screen: pygame.Surface, winner_id: int, scores: dict[int, 
     cx, cy = screen.get_rect().center
     color = PLAYER1_COLOR if winner_id == 1 else PLAYER2_COLOR
 
-    title = _font("arial", 40).render(f"🏆 Player {winner_id} Wins the Match!", True, color)
+    title = _font("arial", 40).render(f" Player {winner_id} Wins the Match!", True, color)
     screen.blit(title, title.get_rect(center=(cx, cy - 40)))
 
-    score_text = f"Final Score  —  P1: {scores[1]}  |  P2: {scores[2]}"
+    score_text = f"Rounds Won  —  P1: {scores[1]}  |  P2: {scores[2]}"
     score_surf = _font("arial", 22).render(score_text, True, HUD_COLOR)
     screen.blit(score_surf, score_surf.get_rect(center=(cx, cy + 10)))
 
