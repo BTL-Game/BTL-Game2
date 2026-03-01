@@ -250,7 +250,7 @@ All external assets used in this project are listed below.
 
 ### Gameplay Demo
 
-<video src="assets/demo.webm" controls autoplay loop muted style="max-width: 100%;"></video>
+[demo.webm](https://github.com/user-attachments/assets/0b59b792-4a98-4c54-888b-2752cbf50449)
 
 
 ---
