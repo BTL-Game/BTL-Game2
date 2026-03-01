@@ -15,11 +15,13 @@ from game.config import (
 )
 from game.entities.wall import Wall, WallType
 
+
 @dataclass
 class MapData:
     """Represents a single map/level."""
     name: str
     grid: list[str]
+    description: str = ""
     spawn_p1: pygame.Vector2 = field(default_factory=lambda: pygame.Vector2(0, 0))
     spawn_p2: pygame.Vector2 = field(default_factory=lambda: pygame.Vector2(0, 0))
 
@@ -67,18 +69,85 @@ def get_open_tiles(grid: list[str]) -> list[pygame.Vector2]:
     open_tiles: list[pygame.Vector2] = []
     for row_idx, row in enumerate(grid):
         for col_idx, char in enumerate(row):
-            # Only include completely open tiles, exclude bricks and spawn points
+            # Only include completely open tiles, excluding bricks and spawn points
             if char == TILE_OPEN:
                 open_tiles.append(_tile_center(row_idx, col_idx))
     return open_tiles
 
 
 # ---------------------------------------------------------------------------
+# Map Registry — Single Source of Truth
+# ---------------------------------------------------------------------------
+
+class MapRegistry:
+    """Manages all available maps in the game.
+
+    """
+
+    # Starts empty; populated by register_map() at module parse time.
+    _maps: dict[str, MapData] = {}
+
+    @classmethod
+    def get_map(cls, name: str) -> MapData | None:
+        """Get a map by its name (case-insensitive)."""
+        return cls._maps.get(name.lower())
+
+    @classmethod
+    def get_all_maps(cls) -> list[MapData]:
+        """Get all available maps in registration order."""
+        return list(cls._maps.values())
+
+    @classmethod
+    def get_map_names(cls) -> list[str]:
+        """Get all map keys in registration order."""
+        return list(cls._maps.keys())
+
+    @classmethod
+    def add_map(cls, key: str, map_data: MapData) -> None:
+        """Register a map. Called automatically by register_map()."""
+        cls._maps[key.lower()] = map_data
+
+    @classmethod
+    def get_map_by_index(cls, index: int) -> MapData | None:
+        """Get a map by its insertion index."""
+        maps = cls.get_all_maps()
+        if 0 <= index < len(maps):
+            return maps[index]
+        return None
+
+
+# Auto-Registration Helper
+
+# ALL_MAPS is populated by register_map() at import time.
+# It stays in sync with MapRegistry automatically — no manual updates required.
+ALL_MAPS: list[MapData] = []
+
+
+def register_map(map_data: MapData) -> MapData:
+    """Register a MapData instance with MapRegistry and the ALL_MAPS list.
+
+    Call this immediately after defining a new map constant::
+
+        MAP_DESERT = MapData(name="Desert", grid=[...])
+        register_map(MAP_DESERT)
+
+    Adding that single call is the *only* step needed to make a new map appear
+    in the map selection screen. No other file needs to be modified.
+
+    Returns the same MapData object unchanged (for chaining convenience).
+    """
+    MapRegistry.add_map(map_data.name.lower(), map_data)
+    ALL_MAPS.append(map_data)
+    return map_data
+
+
+# ---------------------------------------------------------------------------
 # Map Definitions
 # ---------------------------------------------------------------------------
 
-MAP_CLASSIC = MapData(
+MAP_CLASSIC = register_map(MapData(
     name="Classic",
+    description="A sprawling maze \u2014 master the corridors",
     grid=[
         "########################",
         "#1.####....##....####..#",
@@ -97,10 +166,11 @@ MAP_CLASSIC = MapData(
         "#....####.........##...#",
         "########################",
     ],
-)
+))
 
-MAP_FORTRESS = MapData(
+MAP_FORTRESS = register_map(MapData(
     name="Fortress",
+    description="Brick bastions divide every lane",
     grid=[
         "########################",
         "#1.....#........#......#",
@@ -119,10 +189,11 @@ MAP_FORTRESS = MapData(
         "#.....#........#.....2.#",
         "########################",
     ],
-)
+))
 
-MAP_ARENA = MapData(
+MAP_ARENA = register_map(MapData(
     name="Arena",
+    description="Open ground \u2014 nowhere to hide",
     grid=[
         "########################",
         "#1....................2#",
@@ -141,51 +212,27 @@ MAP_ARENA = MapData(
         "#......................#",
         "########################",
     ],
-    
-)
+))
 
-
-# ---------------------------------------------------------------------------
-# Map Registry
-# ---------------------------------------------------------------------------
-
-class MapRegistry:
-    """Manages all available maps in the game."""
-    
-    _maps: dict[str, MapData] = {
-        "classic": MAP_CLASSIC,
-        "fortress": MAP_FORTRESS,
-        "arena": MAP_ARENA,
-    }
-    
-    @classmethod
-    def get_map(cls, name: str) -> MapData | None:
-        """Get a map by its name (case-insensitive)."""
-        return cls._maps.get(name.lower())
-    
-    @classmethod
-    def get_all_maps(cls) -> list[MapData]:
-        """Get all available maps."""
-        return list(cls._maps.values())
-    
-    @classmethod
-    def get_map_names(cls) -> list[str]:
-        """Get all map names."""
-        return list(cls._maps.keys())
-    
-    @classmethod
-    def add_map(cls, key: str, map_data: MapData) -> None:
-        """Add a new map to the registry (for easy expansion)."""
-        cls._maps[key.lower()] = map_data
-    
-    @classmethod
-    def get_map_by_index(cls, index: int) -> MapData | None:
-        """Get a map by its index."""
-        maps = cls.get_all_maps()
-        if 0 <= index < len(maps):
-            return maps[index]
-        return None
-
-# For existing code that uses the old ALL_MAPS and MAP_NAMES
-ALL_MAPS: list[MapData] = [MAP_CLASSIC, MAP_FORTRESS, MAP_ARENA]
-MAP_NAMES: list[str] = [m.name for m in ALL_MAPS]
+MAP_OPEN = register_map(MapData(
+    name="Open Field",
+    description="Wide open spaces \u2014 no cover at all",
+    grid=[
+        "########################",
+        "#1......................#",
+        "#......................#",
+        "#......................#",
+        "#......####....####....#",
+        "#......#..#....#..#....#",
+        "#......####....####....#",
+        "#......................#",
+        "#......................#",
+        "#......####....####....#",
+        "#......#..#....#..#....#",
+        "#......####....####....#",
+        "#......................#",
+        "#......................#",
+        "#......................2#",
+        "########################",
+    ],
+))

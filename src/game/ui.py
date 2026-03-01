@@ -14,18 +14,29 @@ from game.config import (
     SCORE_LIMIT,
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
+    # UI palette
+    NEON_CYAN,
+    NEON_MAGENTA,
+    NEON_BLUE,
+    DARK_PANEL,
+    PANEL_BORDER,
+    # Map-select layout
+    MAP_SELECT_VISIBLE_CARDS,
+    MAP_CARD_W,
+    MAP_CARD_H,
+    MAP_CARD_GAP,
 )
 from game.entities.powerup import PowerUpType
 from game.entities.tank import Tank
 
 
-# ── Sci-fi colour palette ────────────────────────────────────────────────
-
-_NEON_CYAN = (0, 255, 255)
-_NEON_MAGENTA = (255, 0, 200)
-_NEON_BLUE = (80, 160, 255)
-_DARK_PANEL = (12, 14, 22)
-_PANEL_BORDER = (40, 60, 90)
+# Colour aliases kept for backwards-compatibility inside this module.
+# All values now come from game.config — edit constants there, not here.
+_NEON_CYAN    = NEON_CYAN
+_NEON_MAGENTA = NEON_MAGENTA
+_NEON_BLUE    = NEON_BLUE
+_DARK_PANEL   = DARK_PANEL
+_PANEL_BORDER = PANEL_BORDER
 
 
 # ── Font cache (avoid re-creating every frame) ───────────────────────────
@@ -124,12 +135,6 @@ def draw_title_screen(screen: pygame.Surface, selection: int = 0) -> None:
         screen.blit(surf, surf.get_rect(center=(cx, cy + 175 + i * 20)))
 
 
-_MAP_DESCRIPTIONS: dict[str, str] = {
-    "Classic":  "A sprawling maze — master the corridors",
-    "Fortress": "Brick bastions divide every lane",
-    "Arena":    "Open ground — nowhere to hide",
-}
-
 
 def draw_map_select(screen: pygame.Surface, maps, selected_index: int) -> None:
     """Sci-fi map selection screen with animated neon cards and mini-map previews."""
@@ -165,20 +170,30 @@ def draw_map_select(screen: pygame.Surface, maps, selected_index: int) -> None:
     tag.set_alpha(int(150 + 70 * math.sin(t * 4)))
     screen.blit(tag, tag.get_rect(center=(cx, 100)))
 
-    # ── Map cards ──
-    card_w, card_h = 224, 290
-    gap = 22
+    # ── Map cards (sliding window — always shows MAP_SELECT_VISIBLE_CARDS cards) ──
+    card_w, card_h = MAP_CARD_W, MAP_CARD_H
+    gap = MAP_CARD_GAP
     n = len(maps)
-    total_w = n * card_w + (n - 1) * gap
-    start_x = cx - total_w // 2
     card_top = 125
 
-    for i, m in enumerate(maps):
-        cx_card = start_x + i * (card_w + gap) + card_w // 2
-        is_sel = i == selected_index
+    # The visible window is centred on the selected card.
+    # Clamp so we never go out of bounds (also handles n < MAP_SELECT_VISIBLE_CARDS).
+    half = MAP_SELECT_VISIBLE_CARDS // 2
+    win_start = max(0, min(selected_index - half, max(0, n - MAP_SELECT_VISIBLE_CARDS)))
+    win_end   = min(n, win_start + MAP_SELECT_VISIBLE_CARDS)
+    visible   = list(range(win_start, win_end))
 
-        card_x = cx_card - card_w // 2
-        card_y = card_top
+    # Layout: centre the visible strip on screen
+    total_w = len(visible) * card_w + (len(visible) - 1) * gap
+    start_x = cx - total_w // 2
+
+    for slot, map_idx in enumerate(visible):
+        m = maps[map_idx]
+        is_sel = map_idx == selected_index
+
+        cx_card = start_x + slot * (card_w + gap) + card_w // 2
+        card_x  = cx_card - card_w // 2
+        card_y  = card_top
 
         # Animated card lift for selected
         if is_sel:
@@ -226,9 +241,8 @@ def draw_map_select(screen: pygame.Surface, maps, selected_index: int) -> None:
                        neon=is_sel)
 
         # ── Description ──
-        desc = _MAP_DESCRIPTIONS.get(m.name, "")
         desc_col = (160, 200, 230) if is_sel else (90, 100, 120)
-        desc_surf = _font("arial", 12).render(desc, True, desc_col)
+        desc_surf = _font("arial", 12).render(m.description, True, desc_col)
         desc_y = preview_y + preview_h + 10
         screen.blit(desc_surf, desc_surf.get_rect(center=(cx_card, desc_y)))
 
@@ -239,20 +253,20 @@ def draw_map_select(screen: pygame.Surface, maps, selected_index: int) -> None:
             badge_surf.set_alpha(int(160 + 80 * math.sin(t * 5)))
             screen.blit(badge_surf, badge_surf.get_rect(center=(cx_card, badge_y)))
 
-    # ── Side navigation arrows ──
+    # ── Side navigation arrows (show when there are more maps off-screen) ──
     arr_y = card_top + card_h // 2
     arr_font = _font("arial", 36, bold=True)
-    left_arr = arr_font.render("◀", True, _NEON_CYAN if selected_index > 0 else (40, 50, 65))
-    right_arr = arr_font.render("▶", True, _NEON_CYAN if selected_index < len(maps) - 1 else (40, 50, 65))
-    screen.blit(left_arr, left_arr.get_rect(midright=(start_x - 14, arr_y)))
+    left_arr  = arr_font.render("◀", True, _NEON_CYAN if selected_index > 0 else (40, 50, 65))
+    right_arr = arr_font.render("▶", True, _NEON_CYAN if selected_index < n - 1 else (40, 50, 65))
+    screen.blit(left_arr,  left_arr.get_rect(midright=(start_x - 14, arr_y)))
     screen.blit(right_arr, right_arr.get_rect(midleft=(start_x + total_w + 14, arr_y)))
 
-    # ── Map index dots ──
+    # ── Map index dots (one dot per map, scrollable row) ──
     dot_y = card_top + card_h + 24
     for i in range(n):
         dot_col = _NEON_CYAN if i == selected_index else (40, 55, 75)
-        dot_r = 5 if i == selected_index else 3
-        dot_x = cx + (i - n // 2) * 20
+        dot_r   = 5 if i == selected_index else 3
+        dot_x   = cx + (i - n // 2) * 20
         pygame.draw.circle(screen, dot_col, (dot_x, dot_y), dot_r)
 
 

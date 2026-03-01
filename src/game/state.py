@@ -56,9 +56,7 @@ class ShootFlash:
     player_id: int
 
 
-# ══════════════════════════════════════════════════════════════════════════
-# GameState (orchestrator – delegates to managers)
-# ══════════════════════════════════════════════════════════════════════════
+
 
 class GameState:
     def __init__(self) -> None:

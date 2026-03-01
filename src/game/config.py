@@ -104,3 +104,21 @@ POWERUP_COLORS = {
 DEFAULT_SFX_VOLUME = 0.5  # 50/100
 DEFAULT_MUSIC_VOLUME = 0.5  # 50/100
 VOLUME_STEP = 0.1  # Volume adjustment increment
+
+# ---------------------------------------------------------------------------
+# UI — Sci-fi neon colour palette
+# ---------------------------------------------------------------------------
+NEON_CYAN    = (0, 255, 255)
+NEON_MAGENTA = (255, 0, 200)
+NEON_BLUE    = (80, 160, 255)
+DARK_PANEL   = (12, 14, 22)
+PANEL_BORDER = (40, 60, 90)
+
+# ---------------------------------------------------------------------------
+# UI — Map-select screen layout
+# ---------------------------------------------------------------------------
+MAP_SELECT_VISIBLE_CARDS = 3    # how many map cards are visible at once
+MAP_CARD_W   = 224              # card width  (px)
+MAP_CARD_H   = 290              # card height (px)
+MAP_CARD_GAP = 22               # gap between cards (px)
+
