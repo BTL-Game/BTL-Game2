@@ -40,6 +40,7 @@ BULLET_RADIUS = 4
 BULLET_MAX_PER_PLAYER = 5
 BULLET_COOLDOWN = 0.25
 BULLET_MAX_BOUNCES = 5
+BULLET_MAX_LIFETIME = 10.0  # seconds before a bullet expires regardless of bounces
 
 # ---------------------------------------------------------------------------
 # Health & Scoring

@@ -1,6 +1,6 @@
 # Tank Battle: Chaos Maze
 
-A two-player local multiplayer tank battle game built with Python and Pygame. Two players share a keyboard and fight through hand-crafted mazes — collecting coins, grabbing power-ups, and bouncing bullets off walls to outlast the other.
+A two-player local multiplayer tank battle game built with Python and Pygame. Two players share a keyboard and fight through hand-crafted mazes — collecting coins, eliminating the enemy, grabbing power-ups, and bouncing bullets off walls. The first player to win **5 rounds** claims the match.
 
 ---
 
@@ -22,11 +22,11 @@ A two-player local multiplayer tank battle game built with Python and Pygame. Tw
 
 - **Local 2-player split-keyboard** multiplayer — no network required
 - **3 hand-crafted maze maps** to choose from at the start of every match
-- **Bouncing bullets** — projectiles reflect off walls up to 5 times using real vector reflection math
+- **Bouncing bullets** — projectiles reflect off walls up to **5 times** and expire after **10 seconds**, whichever comes first, using real vector reflection math
 - **Destructible brick walls** — two hits crumble them, opening up new paths mid-match
 - **Independent turret rotation** — aim separately from the direction you're moving
 - **Triple-shot mode** — fires three bullets in a spread pattern simultaneously
-- **Food/coin collection** scoring system — first to 30 points wins the match
+- **Round-based match system** — collect 30 food points **or** destroy the enemy tank to win a round; first to win **5 rounds** wins the match
 - **Three power-ups** randomly spawned on the map: Speed Boost, Shield, and Triple Shot
 - **Particle effects** on tank destruction
 - **Sound effects and looping background music** with in-game volume controls
@@ -97,7 +97,16 @@ python src/main.py
 ## Gameplay Mechanics
 
 ### Scoring & Win Condition
-Players earn points by driving over **coin pickups** scattered across the map. The first player to reach **30 points** wins the overall match. Coins respawn in waves every 6 seconds, keeping the pressure on throughout.
+
+The match uses a **round-based** system:
+
+1. **Win a round** by either:
+   - Collecting **30 food points** (coins) within that round, **or**
+   - Destroying the enemy tank.
+2. **Food scores reset** at the start of every new round, so every round is a fresh race to 30.
+3. **Win the match** by winning **5 rounds** first. The round-win target is controlled by the `ROUND_WIN_LIMIT` constant in `src/game/config.py`.
+
+The HUD displays each player's current food score (`Score: X/30`) in the top corners, and the round-win tally (`P1 wins | Round N | P2 wins`) in the centre.
 
 ### Health & Combat
 Each tank starts with **3 health points**. A direct bullet hit removes 1 HP. When a tank's HP reaches zero, a round ends. Multi-round matches track wins per player.
@@ -105,7 +114,7 @@ Each tank starts with **3 health points**. A direct bullet hit removes 1 HP. Whe
 ### Bullet Rules
 - Each player can have at most **5 bullets** in play at once.
 - There is a **0.25-second cooldown** between shots.
-- Bullets are removed after leaving the screen boundary **or** bouncing **5 times**.
+- Bullets are removed after leaving the screen boundary, bouncing **5 times**, or existing for **10 seconds** — whichever comes first.
 - Bullets cannot hit their own owner.
 
 ### Power-Ups
@@ -198,7 +207,7 @@ src/
     ├── ui.py                       # HUD, title screen, pause menu, countdown, game-over screens
     ├── entities/
     │   ├── tank.py                 # Tank dataclass: movement, power-up tracking, damage
-    │   ├── bullet.py               # Bullet dataclass: position, velocity, bounce counter
+    │   ├── bullet.py               # Bullet dataclass: position, velocity, bounce counter, time alive
     │   ├── wall.py                 # Wall dataclass: type (steel/brick) and destruction state
     │   ├── food.py                 # Coin/food pickup dataclass
     │   └── powerup.py              # Power-up dataclass and PowerUpType enum

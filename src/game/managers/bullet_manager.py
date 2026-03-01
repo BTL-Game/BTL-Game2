@@ -4,6 +4,7 @@ import pygame
 
 from game.config import (
     BULLET_MAX_BOUNCES,
+    BULLET_MAX_LIFETIME,
     BULLET_COOLDOWN,
     BULLET_MAX_PER_PLAYER,
     BULLET_RADIUS,
@@ -84,6 +85,7 @@ class BulletManager:
             if (
                 screen_rect.collidepoint(bullet.position.x, bullet.position.y)
                 and bullet.bounces < BULLET_MAX_BOUNCES
+                and bullet.time_alive < BULLET_MAX_LIFETIME
             ):
                 alive.append(bullet)
 

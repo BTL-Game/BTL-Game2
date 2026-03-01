@@ -11,9 +11,11 @@ class Bullet:
     velocity: pygame.Vector2
     owner_id: int
     bounces: int = 0
+    time_alive: float = 0.0
 
     def update(self, dt: float) -> None:
         self.position += self.velocity * dt
+        self.time_alive += dt
 
     def get_rect(self) -> pygame.Rect:
         size = BULLET_RADIUS * 2
