@@ -219,18 +219,18 @@ All external assets used in this project are listed below.
 
 ### Sprites
 
-| Asset | File(s) 
-|---|---|
-| Blue Tank Body | `assets/Blue/Bodies/body_tracks.png` 
-| Red Tank Body | `assets/Red/Bodies/body_tracks.png` 
-| Blue Tank Turret | `assets/Blue/Weapons/weapon.png` 
-| Red Tank Turret | `assets/Red/Weapons/weapon.png` 
-| Shoot Flash (Blue/Red) | `assets/*/Weapons/shoot.png` 
-| Explosion (Blue/Red) | `assets/*/Bodies/*explosion.png` 
-| Wall Sprites (Steel/Brick) | `assets/Wall/*.png` 
-| Coin (Food) | `assets/Food/coin.png` 
-| Power-up Icons | `assets/Food/speed.png`, `shield.png`, `tripple.png` 
-| Background | `assets/Background/background.png` 
+| Asset | File(s) | source
+|---|---|---|
+| Blue Tank Body | `assets/Blue/Bodies/body_tracks.png` | https://zintoki.itch.io/ground-shaker
+| Red Tank Body | `assets/Red/Bodies/body_tracks.png` | https://zintoki.itch.io/ground-shaker
+| Blue Tank Turret | `assets/Blue/Weapons/weapon.png` | https://zintoki.itch.io/ground-shaker
+| Red Tank Turret | `assets/Red/Weapons/weapon.png` | https://zintoki.itch.io/ground-shaker
+| Shoot Flash (Blue/Red) | `assets/*/Weapons/shoot.png` | https://zintoki.itch.io/ground-shaker
+| Explosion (Blue/Red) | `assets/*/Bodies/*explosion.png` | https://zintoki.itch.io/ground-shaker
+| Wall Sprites (Steel/Brick) | `assets/Wall/*.png` | self-draw
+| Coin (Food) | `assets/Food/coin.png` | self-draw
+| Power-up Icons | `assets/Food/speed.png`, `shield.png`, `tripple.png` | self-draw
+| Background | `assets/Background/background.png` | self-draw
 
 ### Audio
 
