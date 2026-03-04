@@ -202,7 +202,7 @@ def _blocked(rect: pygame.Rect) -> bool:
             </section>
 
             <section>
-                <h2>Collision: Implementation</h2>
+                <h2>Sliding: Implementation</h2>
                 <div class="dark-panel">
                     <pre><code>test_x = pygame.Vector2(tank_position.x, previous_position.y)
 test_x.x = clamp(test_x.x, half, SCREEN_WIDTH - half)
@@ -237,7 +237,7 @@ return test_y</code></pre>
             </section>
 
             <section>
-                <h2>Collision: Implementation</h2>
+                <h2>Physics: Reflection</h2>
                 <div class="dark-panel">
                     <pre><code>def reflect_velocity(velocity: pygame.Vector2, normal: pygame.Vector2) -> pygame.Vector2:
     # Reflection formula: v' = v - 2 * (v dot n) * n
