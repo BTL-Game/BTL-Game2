@@ -187,6 +187,36 @@
             </section>
 
             <section>
+                <h2>Collision: Implementation</h2>
+                <div class="dark-panel">
+                    <pre><code>def clamp(value: float, low: float, high: float) -> float:
+    return max(low, min(high, value))
+
+def _blocked(rect: pygame.Rect) -> bool:
+    if any(wall.rect.colliderect(rect) for wall in walls if not wall.is_destroyed):
+        return True
+    if other_tank_rect is not None and other_tank_rect.colliderect(rect):
+        return True
+    return False</code></pre>
+                </div>
+            </section>
+
+            <section>
+                <h2>Collision: Implementation</h2>
+                <div class="dark-panel">
+                    <pre><code>test_x = pygame.Vector2(tank_position.x, previous_position.y)
+test_x.x = clamp(test_x.x, half, SCREEN_WIDTH - half)
+if _blocked(_tank_rect(test_x)):
+    test_x.x = previous_position.x
+test_y = pygame.Vector2(test_x.x, tank_position.y)
+test_y.y = clamp(test_y.y, half, SCREEN_HEIGHT - half)
+if _blocked(_tank_rect(test_y)):
+    test_y.y = previous_position.y
+return test_y</code></pre>
+                </div>
+            </section>
+            
+            <section>
                 <h2>Physics: Bullet Projectiles</h2>
                 <ul>
                     <li>Bullets travel at 280 px/s <span class="cite"></span>.</li>
@@ -206,6 +236,14 @@
                 </ul>
             </section>
 
+            <section>
+                <h2>Collision: Implementation</h2>
+                <div class="dark-panel">
+                    <pre><code>def reflect_velocity(velocity: pygame.Vector2, normal: pygame.Vector2) -> pygame.Vector2:
+    # Reflection formula: v' = v - 2 * (v dot n) * n
+return velocity - 2 * velocity.dot(normal) * normal</code></pre>
+                </div>
+            </section>
             <section>
                 <h2>Power-Up Subsystem</h2>
                 <div class="dark-panel">
