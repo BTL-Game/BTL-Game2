@@ -1,67 +1,161 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tank Battle: Chaos Maze - Pitch Deck</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/monokai.min.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+
     <style>
         :root {
-            --bg-color: #141418; /* (20, 20, 24) */
+            --bg-color: #141418;
+            /* (20, 20, 24) */
             --neon-cyan: #00FFFF;
             --neon-magenta: #FF00C8;
             --neon-blue: #50A0FF;
-            --dark-panel: #0C0E16; /* (12, 14, 22) */
-            --panel-border: #283C5A; /* (40, 60, 90) */
+            --dark-panel: #0C0E16;
+            /* (12, 14, 22) */
+            --panel-border: #283C5A;
+            /* (40, 60, 90) */
             --powerup-speed: #32DC64;
             --powerup-shield: #64B4FF;
             --powerup-triple: #FFC83C;
         }
 
-        .reveal {
+        body {
             background-color: var(--bg-color);
+        }
+
+        /* Subtle retro scanline effect over everything */
+        body::after {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        .reveal {
+            background-color: transparent;
+            background-image:
+                linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
             font-family: 'Roboto Mono', monospace;
         }
 
-        .reveal h1, .reveal h2, .reveal h3, .reveal h4 {
+        .reveal h1,
+        .reveal h2,
+        .reveal h3,
+        .reveal h4 {
             font-family: 'Orbitron', sans-serif;
             text-transform: uppercase;
             font-weight: 700;
+            letter-spacing: 2px;
         }
 
         .reveal h1 {
             color: var(--neon-cyan);
             text-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-blue);
             font-size: 2.2em;
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Glowing underline for main title */
+        .reveal h1::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+            box-shadow: 0 0 10px var(--neon-cyan);
         }
 
         .reveal h2 {
             color: var(--neon-magenta);
-            text-shadow: 0 0 10px var(--neon-magenta);
+            text-shadow: 0 0 10px rgba(255, 0, 200, 0.6);
             font-size: 1.5em;
+            border-left: 4px solid var(--neon-magenta);
+            padding-left: 15px;
+            text-align: left;
         }
 
         .reveal ul {
-            list-style-type: square;
+            list-style-type: none;
+            /* Changed from square for custom bullet */
             color: #EBEBEB;
+            padding-left: 20px;
         }
 
         .reveal li {
             margin-bottom: 15px;
             font-size: 0.85em;
-            line-height: 1.3;
+            line-height: 1.4;
+            position: relative;
+            text-align: left;
+        }
+
+        /* Custom chevron bullets */
+        .reveal li::before {
+            content: '>';
+            position: absolute;
+            left: -25px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 5px var(--neon-blue);
+            font-weight: bold;
         }
 
         .dark-panel {
             background-color: var(--dark-panel);
-            border: 2px solid var(--panel-border);
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+            border: 1px solid var(--panel-border);
+            border-left: 3px solid var(--neon-cyan);
+            border-radius: 4px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 255, 255, 0.03);
             margin-top: 20px;
+            position: relative;
+            text-align: left;
+        }
+
+        /* Sci-fi corner decorations */
+        .dark-panel::after {
+            content: '';
+            position: absolute;
+            top: -1px;
+            right: -1px;
+            width: 20px;
+            height: 20px;
+            border-top: 2px solid var(--neon-cyan);
+            border-right: 2px solid var(--neon-cyan);
+            opacity: 0.7;
+        }
+
+        .dark-panel::before {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: -1px;
+            width: 20px;
+            height: 20px;
+            border-bottom: 2px solid var(--neon-cyan);
+            border-left: 2px solid var(--neon-cyan);
+            opacity: 0.7;
         }
 
         .glow-text-cyan {
@@ -76,26 +170,114 @@
 
         .cite {
             font-size: 0.4em;
-            color: #666;
+            color: var(--neon-blue);
             vertical-align: super;
             opacity: 0.7;
             font-family: monospace;
         }
 
-        .diagram-placeholder {
-            border: 2px dashed var(--neon-blue);
-            padding: 10px;
-            margin: 15px 0;
-            font-size: 0.6em;
-            color: var(--neon-blue);
-            background: rgba(80, 160, 255, 0.1);
+        .req-highlight {
+            background-color: rgba(255, 0, 200, 0.15);
+            border-left: 4px solid var(--neon-magenta);
+            padding: 6px 12px;
+            font-size: 0.75em;
+            color: #FFF;
+            font-weight: bold;
+            display: inline-block;
+            margin: 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 8px rgba(255, 0, 200, 0.4);
+        }
+
+        /* HUD Corners styling - Tank Track look */
+        .hud-corner {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.8;
+            border-color: var(--neon-cyan);
+            border-style: solid;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3) inset;
+        }
+
+        .top-left {
+            top: 30px;
+            left: 30px;
+            border-width: 4px 0 0 4px;
+            border-top-style: dashed;
+            border-left-style: dashed;
+        }
+
+        .top-right {
+            top: 30px;
+            right: 30px;
+            border-width: 4px 4px 0 0;
+            border-top-style: dashed;
+            border-right-style: dashed;
+        }
+
+        .bottom-left {
+            bottom: 30px;
+            left: 30px;
+            border-width: 0 0 4px 4px;
+            border-bottom-style: dashed;
+            border-left-style: dashed;
+        }
+
+        .bottom-right {
+            bottom: 30px;
+            right: 30px;
+            border-width: 0 4px 4px 0;
+            border-bottom-style: dashed;
+            border-right-style: dashed;
+        }
+
+        /* Tank turrets in the corners */
+        .hud-corner::after {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background-color: var(--neon-magenta);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--neon-magenta);
+        }
+
+        .top-left::after {
+            top: -9px;
+            left: -9px;
+        }
+
+        .top-right::after {
+            top: -9px;
+            right: -9px;
+        }
+
+        .bottom-left::after {
+            bottom: -9px;
+            left: -9px;
+        }
+
+        .bottom-right::after {
+            bottom: -9px;
+            right: -9px;
         }
     </style>
 </head>
+
 <body>
+    <!-- HUD Decoration -->
+    <div class="hud-corner top-left"></div>
+    <div class="hud-corner top-right"></div>
+    <div class="hud-corner bottom-left"></div>
+    <div class="hud-corner bottom-right"></div>
+
     <div class="reveal">
         <div class="slides">
-            
+
             <section>
                 <h1>Tank Battle</h1>
                 <h2 style="font-size: 1.5em;">Chaos Maze</h2>
@@ -107,9 +289,17 @@
                 <h2>Gameplay Overview</h2>
                 <div class="dark-panel">
                     <ul>
-                        <li><strong>Local Multiplayer:</strong> Two-player head-to-head combat sharing a single keyboard <span class="cite"></span>.</li>
-                        <li><strong>Dual-Stick Mechanics:</strong> Tank body and turret rotation are controlled completely independently <span class="cite"></span>.</li>
-                        <li><strong>Pacing:</strong> 60 FPS action in a 960 × 640 window <span class="cite"></span>.</li>
+                        <li><span class="req-highlight"
+                                style="margin: 0 5px 0 0; font-size: 0.6em; padding: 2px 5px;">REQ</span> <strong>Local
+                                Multiplayer:</strong> Two-player head-to-head combat sharing a single keyboard <span
+                                class="cite"></span>.</li>
+                        <li><span class="req-highlight"
+                                style="margin: 0 5px 0 0; font-size: 0.6em; padding: 2px 5px; border-left-color: var(--neon-cyan); background-color: rgba(0, 255, 255, 0.15);">BONUS</span>
+                            <strong>Independent Turret:</strong> Tank body and turret rotation are controlled completely
+                            independently <span class="cite"></span>.
+                        </li>
+                        <li><strong>Pacing:</strong> 60 FPS action in a 960 × 640 window <span class="cite"></span>.
+                        </li>
                     </ul>
                 </div>
             </section>
@@ -117,9 +307,12 @@
             <section>
                 <h2>Winning the Match</h2>
                 <ul>
-                    <li><strong>Round Victory:</strong> Win a round by destroying the enemy tank OR collecting 30 food points <span class="cite"></span>.</li>
-                    <li><strong>Match Victory:</strong> The first player to reach 5 round wins claims the match <span class="cite"></span>.</li>
-                    <li><strong>Persistence:</strong> Health (3 HP) and round scores reset each round, but uncollected food remains on the map <span class="cite"></span>.</li>
+                    <li><strong>Round Victory:</strong> Win a round by destroying the enemy tank OR collecting 30 food
+                        points <span class="cite"></span>.</li>
+                    <li><strong>Match Victory:</strong> The first player to reach 5 round wins claims the match <span
+                            class="cite"></span>.</li>
+                    <li><strong>Persistence:</strong> Health (3 HP) and round scores reset each round, but uncollected
+                        food remains on the map <span class="cite"></span>.</li>
                 </ul>
             </section>
 
@@ -128,50 +321,70 @@
                 <div class="dark-panel">
                     <ul>
                         <li>Maps are defined as 24 × 16 grids of text characters <span class="cite"></span>.</li>
-                        <li>The <code>MapRegistry</code> automatically loads maps at import time <span class="cite"></span>.</li>
-                        <li>Four built-in arenas: Classic, Fortress, Arena, and Open Field <span class="cite"></span>.</li>
+                        <li>The <code>MapRegistry</code> automatically loads maps at import time <span
+                                class="cite"></span>.</li>
+                        <li>Four built-in arenas: Classic, Fortress, Arena, and Open Field <span class="cite"></span>.
+                        </li>
                     </ul>
                 </div>
             </section>
 
             <section>
                 <h2>Grid Parsing & Generation</h2>
-                <div class="diagram-placeholder"></div>
+                <div class="req-highlight">REQUIREMENT: Array/Grid Map Data</div>
                 <ul>
-                    <li><code>build_walls()</code> parses the grid into physical objects <span class="cite"></span>.</li>
+                    <li><code>build_walls()</code> parses the grid into physical objects <span class="cite"></span>.
+                    </li>
                     <li><strong>#</strong> becomes indestructible Steel walls <span class="cite"></span>.</li>
                     <li><strong>B</strong> becomes destructible Brick walls <span class="cite"></span>.</li>
-                    <li><strong>.</strong> becomes open tiles mapped as valid item spawn coordinates via <code>get_open_tiles()</code> <span class="cite"></span>.</li>
+                    <li><strong>.</strong> becomes open tiles mapped as valid item spawn coordinates via
+                        <code>get_open_tiles()</code> <span class="cite"></span>.
+                    </li>
                 </ul>
             </section>
 
             <section>
                 <h2>Destructible Environments</h2>
+                <div class="req-highlight"
+                    style="border-left-color: var(--neon-cyan); background-color: rgba(0, 255, 255, 0.15);">BONUS:
+                    Destructible Arena</div>
                 <div class="dark-panel">
                     <ul>
-                        <li><strong>Hit Points:</strong> Brick walls start with 2 HP (`BRICK_HEALTH = 2`) <span class="cite"></span>.</li>
-                        <li><strong>Visual States:</strong> The <code>visual_state</code> property updates immediately upon taking damage <span class="cite"></span>.</li>
-                        <li><strong>Destruction:</strong> At 0 HP, walls transition to <code>DESTROYED</code> and are removed from physics and rendering calculations <span class="cite"></span>.</li>
+                        <li><strong>Hit Points:</strong> Brick walls start with 2 HP (`BRICK_HEALTH = 2`) <span
+                                class="cite"></span>.</li>
+                        <li><strong>Visual States:</strong> The <code>visual_state</code> property updates immediately
+                            upon taking damage <span class="cite"></span>.</li>
+                        <li><strong>Destruction:</strong> At 0 HP, walls transition to <code>DESTROYED</code> and are
+                            removed from physics and rendering calculations <span class="cite"></span>.</li>
                     </ul>
                 </div>
             </section>
 
             <section>
                 <h2>Physics: Tank Kinematics</h2>
+                <div class="req-highlight">REQUIREMENT: Vector Movement & Trigonometry</div>
                 <ul>
-                    <li><strong>Frame-Rate Independence:</strong> All movement scales by delta-time (`dt`) <span class="cite"></span>.</li>
-                    <li><strong>Base Speeds:</strong> Tanks move at 120 px/s, rotate bodies at 180 deg/s, and rotate turrets at 200 deg/s <span class="cite"></span>.</li>
-                    <li><strong>Vector Math:</strong> Movement direction is derived dynamically from body rotation: <code>Vector2(0, -1).rotate(rotation_deg)</code> <span class="cite"></span>.</li>
+                    <li><strong>Frame-Rate Independence:</strong> All movement scales by delta-time (`dt`) <span
+                            class="cite"></span>.</li>
+                    <li><strong>Base Speeds:</strong> Tanks move at 120 px/s, rotate bodies at 180 deg/s, and rotate
+                        turrets at 200 deg/s <span class="cite"></span>.</li>
+                    <li><strong>Vector Math:</strong> Movement direction is derived dynamically from body rotation:
+                        <code>velocity.y = speed * sin(θ)</code> <span class="cite"></span>.
+                    </li>
                 </ul>
             </section>
 
             <section>
                 <h2>Collision: Axis-Split Resolution</h2>
-                <div class="diagram-placeholder"></div>
+                <div class="req-highlight">REQUIREMENT: Tank vs. Wall Collision (AABB)</div>
                 <ul>
-                    <li>The <code>CollisionManager</code> resolves wall overlapping independently on the X and Y axes <span class="cite"></span>.</li>
-                    <li><strong>Benefit:</strong> Instead of sticking to walls, tanks smoothly slide along flat surfaces and corners <span class="cite"></span>.</li>
-                    <li>Destroyed walls are explicitly ignored during the <code>_blocked()</code> checks <span class="cite"></span>.</li>
+                    <li>The <code>CollisionManager</code> resolves wall overlapping independently on the X and Y axes
+                        <span class="cite"></span>.
+                    </li>
+                    <li><strong>Benefit:</strong> Instead of sticking to walls, tanks smoothly slide along flat surfaces
+                        and corners <span class="cite"></span>.</li>
+                    <li>Destroyed walls are explicitly ignored during the <code>_blocked()</code> checks <span
+                            class="cite"></span>.</li>
                 </ul>
             </section>
 
@@ -180,8 +393,11 @@
                 <div class="dark-panel">
                     <ul>
                         <li>Tanks are restricted strictly to the playable area <span class="cite"></span>.</li>
-                        <li>The <code>clamp()</code> function locks coordinates between <code>TANK_SIZE / 2</code> (20px) and the screen edges (940px / 620px) <span class="cite"></span>.</li>
-                        <li>Screen edge containment is evaluated before wall collision, ensuring unbreakable boundaries <span class="cite"></span>.</li>
+                        <li>The <code>clamp()</code> function locks coordinates between <code>TANK_SIZE / 2</code>
+                            (20px) and the screen edges (940px / 620px) <span class="cite"></span>.</li>
+                        <li>Screen edge containment is evaluated before wall collision, ensuring unbreakable boundaries
+                            <span class="cite"></span>.
+                        </li>
                     </ul>
                 </div>
             </section>
@@ -189,7 +405,7 @@
             <section>
                 <h2>Collision: Implementation</h2>
                 <div class="dark-panel">
-                    <pre><code>def clamp(value: float, low: float, high: float) -> float:
+                    <pre><code class="language-python">def clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
 
 def _blocked(rect: pygame.Rect) -> bool:
@@ -204,7 +420,7 @@ def _blocked(rect: pygame.Rect) -> bool:
             <section>
                 <h2>Sliding: Implementation</h2>
                 <div class="dark-panel">
-                    <pre><code>test_x = pygame.Vector2(tank_position.x, previous_position.y)
+                    <pre><code class="language-python">test_x = pygame.Vector2(tank_position.x, previous_position.y)
 test_x.x = clamp(test_x.x, half, SCREEN_WIDTH - half)
 if _blocked(_tank_rect(test_x)):
     test_x.x = previous_position.x
@@ -215,42 +431,59 @@ if _blocked(_tank_rect(test_y)):
 return test_y</code></pre>
                 </div>
             </section>
-            
+
             <section>
                 <h2>Physics: Bullet Projectiles</h2>
                 <ul>
                     <li>Bullets travel at 280 px/s <span class="cite"></span>.</li>
-                    <li><strong>Limits:</strong> Players can have a maximum of 5 live bullets simultaneously, with a 0.25s firing cooldown <span class="cite"></span>.</li>
-                    <li><strong>Expiry:</strong> Bullets vanish after 5 wall bounces OR after 10 seconds of airtime <span class="cite"></span>.</li>
-                    <li><strong>Safety:</strong> Friendly fire is prevented; bullets check <code>owner_id</code> before applying damage <span class="cite"></span>.</li>
+                    <li><span class="req-highlight"
+                            style="margin: 0 5px 0 0; font-size: 0.6em; padding: 2px 5px;">REQ</span>
+                        <strong>Limits:</strong> Max 5 live bullets simultaneously per player, with cooldown <span
+                            class="cite"></span>.
+                    </li>
+                    <li><strong>Expiry:</strong> Bullets vanish after 5 wall bounces OR after 10 seconds of airtime
+                        <span class="cite"></span>.
+                    </li>
+                    <li><span class="req-highlight"
+                            style="margin: 0 5px 0 0; font-size: 0.6em; padding: 2px 5px;">REQ</span> <strong>Hit
+                            Logic:</strong> Bullet vs. Enemy Tank collision results in damage <span
+                            class="cite"></span>.</li>
                 </ul>
             </section>
 
             <section>
                 <h2>Physics: Wall Reflection</h2>
-                <div class="diagram-placeholder"></div>
+                <div class="req-highlight">REQUIREMENT: Vector Reflection Physics</div>
                 <ul>
-                    <li>When a bullet overlaps a wall, <code>_collision_normal()</code> calculates the shallowest penetration depth to determine the impact face (X or Y) <span class="cite"></span>.</li>
-                    <li><code>reflect_velocity()</code> mirrors the bullet's vector across that normal <span class="cite"></span>.</li>
-                    <li>The bullet is physically pushed out of the wall by the overlap distance + 0.1px to prevent getting stuck <span class="cite"></span>.</li>
+                    <li>When a bullet overlaps a wall, <code>_collision_normal()</code> calculates the shallowest
+                        penetration depth to determine the impact face (X or Y) <span class="cite"></span>.</li>
+                    <li><code>reflect_velocity()</code> mirrors the bullet's vector across that normal <span
+                            class="cite"></span>.</li>
+                    <li>The bullet is physically pushed out of the wall by the overlap distance + 0.1px to prevent
+                        getting stuck <span class="cite"></span>.</li>
                 </ul>
             </section>
 
             <section>
                 <h2>Physics: Reflection</h2>
                 <div class="dark-panel">
-                    <pre><code>def reflect_velocity(velocity: pygame.Vector2, normal: pygame.Vector2) -> pygame.Vector2:
+                    <pre><code class="language-python">def reflect_velocity(velocity: pygame.Vector2, normal: pygame.Vector2) -> pygame.Vector2:
     # Reflection formula: v' = v - 2 * (v dot n) * n
-return velocity - 2 * velocity.dot(normal) * normal</code></pre>
+    return velocity - 2 * velocity.dot(normal) * normal</code></pre>
                 </div>
             </section>
             <section>
                 <h2>Power-Up Subsystem</h2>
+                <div class="req-highlight"
+                    style="border-left-color: var(--neon-cyan); background-color: rgba(0, 255, 255, 0.15);">BONUS:
+                    Power-ups</div>
                 <div class="dark-panel">
                     <ul>
                         <li>Managed entirely by the <code>PowerUpManager</code> <span class="cite"></span>.</li>
-                        <li><strong>Spawning:</strong> Drops a random power-up every 8.0s onto an open tile, capped at 2 simultaneous items on the map <span class="cite"></span>.</li>
-                        <li><strong>State:</strong> Timers are transferred directly into the <code>Tank</code>'s active state dictionary upon collision <span class="cite"></span>.</li>
+                        <li><strong>Spawning:</strong> Drops a random power-up every 8.0s onto an open tile, capped at 2
+                            simultaneous items on the map <span class="cite"></span>.</li>
+                        <li><strong>State:</strong> Timers are transferred directly into the <code>Tank</code>'s active
+                            state dictionary upon collision <span class="cite"></span>.</li>
                     </ul>
                 </div>
             </section>
@@ -258,24 +491,28 @@ return velocity - 2 * velocity.dot(normal) * normal</code></pre>
             <section>
                 <h2>Power-Ups: Speed & Shield</h2>
                 <ul>
-                    <li><span style="color: var(--powerup-speed);">Speed Boost:</span> Multiplies base tank speed by 1.5x for 5.0 seconds. Excellent for flanking and objective rushing <span class="cite"></span>.</li>
-                    <li><span style="color: var(--powerup-shield);">Shield:</span> Completely absorbs the next bullet impact. Lasts up to 8.0 seconds and is visually indicated by an alpha-blended glow <span class="cite"></span>.</li>
+                    <li><span style="color: var(--powerup-speed);">Speed Boost:</span> Multiplies base tank speed by
+                        1.5x for 5.0 seconds. Excellent for flanking and objective rushing <span class="cite"></span>.
+                    </li>
+                    <li><span style="color: var(--powerup-shield);">Shield:</span> Completely absorbs the next bullet
+                        impact. Lasts up to 8.0 seconds and is visually indicated by an alpha-blended glow <span
+                            class="cite"></span>.</li>
                 </ul>
             </section>
 
             <section>
                 <h2>Power-Ups: Triple Shot</h2>
-                <div class="diagram-placeholder"></div>
                 <ul>
                     <li>Lasts for 6.0 seconds <span class="cite"></span>.</li>
                     <li>Overrides standard firing to spawn three bullets simultaneously <span class="cite"></span>.</li>
-                    <li>Side bullets are offset mathematically by ±15.0 degrees (`TRIPLE_SHOT_SPREAD`) from the central turret angle <span class="cite"></span>.</li>
+                    <li>Side bullets are offset mathematically by ±15.0 degrees (`TRIPLE_SHOT_SPREAD`) from the central
+                        turret angle <span class="cite"></span>.</li>
                 </ul>
             </section>
 
             <section>
                 <h1 style="color: var(--neon-magenta); text-shadow: 0 0 20px var(--neon-magenta);">READY TO DEPLOY</h1>
-                <h3 class="glow-text-cyan" style="margin-top: 40px;">Deep mechanical systems behind simple arcade fun.</h3>
+
                 <p style="margin-top: 20px; font-size: 0.8em; color: var(--neon-blue);">[ END OF PRESENTATION ]</p>
             </section>
 
@@ -283,6 +520,7 @@ return velocity - 2 * velocity.dot(normal) * normal</code></pre>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/plugin/highlight/highlight.min.js"></script>
     <script>
         Reveal.initialize({
             controls: true,
@@ -290,8 +528,10 @@ return velocity - 2 * velocity.dot(normal) * normal</code></pre>
             center: true,
             hash: true,
             transition: 'slide',
-            keyboard: true
+            keyboard: true,
+            plugins: [RevealHighlight]
         });
     </script>
 </body>
+
 </html>
