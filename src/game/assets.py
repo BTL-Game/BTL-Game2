@@ -1,9 +1,20 @@
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import pygame
 
 from game.config import FOOD_SIZE, POWERUP_SIZE, SHOOT_SIZE, TANK_SIZE, TILE_SIZE, WALL_INSET
+
+
+def _get_asset_root() -> Path:
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        return Path(sys._MEIPASS) / "assets"
+    else:
+        return Path(__file__).resolve().parents[2] / "assets"
+
+
+ASSET_ROOT = _get_asset_root()
 
 
 @dataclass
