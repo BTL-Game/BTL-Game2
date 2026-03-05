@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 import logging
 
@@ -8,7 +9,14 @@ import pygame
 from game.config import DEFAULT_MUSIC_VOLUME, DEFAULT_SFX_VOLUME
 
 
-SOUND_DIR = Path(__file__).resolve().parents[3] / "assets" / "sounds"
+def _get_sound_dir() -> Path:
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        return Path(sys._MEIPASS) / "assets" / "sounds"
+    else:
+        return Path(__file__).resolve().parents[3] / "assets" / "sounds"
+
+
+SOUND_DIR = _get_sound_dir()
 _log = logging.getLogger(__name__)
 
 

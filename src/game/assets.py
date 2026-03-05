@@ -55,7 +55,6 @@ class SpriteSet:
     explosion_red: pygame.Surface | None = None
 
 
-ASSET_ROOT = Path(__file__).resolve().parents[2] / "assets"
 DEFAULT_BODY_NAME = "body_tracks.png"
 DEFAULT_TURRET_NAME = "weapon.png"
 DEFAULT_SHOOT_NAME = "shoot.png"
