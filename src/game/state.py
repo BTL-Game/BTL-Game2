@@ -32,7 +32,6 @@ from game.input import PLAYER1, PLAYER2
 from game.levels import ALL_MAPS, MapData, build_walls, get_open_tiles
 from game.managers.bullet_manager import BulletManager
 from game.managers.collision_manager import CollisionManager
-from game.managers.particle_manager import ParticleManager
 from game.managers.food_manager import FoodManager
 from game.managers.powerup_manager import PowerUpManager
 from game.managers.sound_manager import SoundManager
@@ -69,7 +68,6 @@ class GameState:
         self.collision_mgr = CollisionManager()
         self.powerup_mgr = PowerUpManager()
         self.food_mgr = FoodManager()
-        self.particle_mgr = ParticleManager()
         self.sound_mgr = SoundManager()
 
         # Sprites
@@ -243,7 +241,6 @@ class GameState:
         }
         self.bullet_mgr.reset()
         self.powerup_mgr.reset()
-        self.particle_mgr.reset()
         self.shoot_flashes.clear()
         self.winner_id = None
         self._explosion_sprite = None
@@ -297,9 +294,6 @@ class GameState:
         for _pid, _ptype in pickups:
             self.sound_mgr.play_powerup()
 
-        # Particles
-        self.particle_mgr.update(dt)
-
         # Round-end on kill OR reaching food score limit
         if round_winner is not None:
             self.winner_id = round_winner
@@ -316,7 +310,6 @@ class GameState:
             if self.tanks[killed_id].health <= 0:
                 killed_tank = self.tanks[killed_id]
                 color = PLAYER1_COLOR if killed_id == 1 else PLAYER2_COLOR
-                self.particle_mgr.spawn_explosion(killed_tank.position.copy(), color)
                 self.sound_mgr.play_explosion()
 
                 # Store explosion sprite for display during round_over
@@ -583,9 +576,6 @@ class GameState:
         # Shoot flashes
         for flash in self.shoot_flashes:
             self._draw_shoot_flash(screen, flash)
-
-        # Particles
-        self.particle_mgr.render(screen)
 
         # HUD
         p1 = self.tanks[1]
