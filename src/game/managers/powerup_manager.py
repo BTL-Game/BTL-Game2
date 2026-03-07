@@ -23,7 +23,7 @@ _DURATIONS: dict[PowerUpType, float] = {
 
 
 class PowerUpManager:
-    """Handles spawning, rendering, and collection of map power-ups."""
+    """Handles spawning and collection of power-ups."""
 
     def __init__(self) -> None:
         self.items: list[PowerUp] = []

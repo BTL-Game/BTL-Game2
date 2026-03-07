@@ -24,7 +24,7 @@ class Tank:
     active_powerups: dict[PowerUpType, float] = field(default_factory=dict)
     is_moving_forward: bool = False
 
-    # -- Properties for easy checks ------------------------------------------
+    # Properties
 
     @property
     def has_speed_boost(self) -> bool:
@@ -38,7 +38,7 @@ class Tank:
     def has_triple_shot(self) -> bool:
         return PowerUpType.TRIPLE in self.active_powerups
 
-    # -- Power-up management --------------------------------------------------
+    # Power-up management
 
     def apply_powerup(self, ptype: PowerUpType, duration: float) -> None:
         self.active_powerups[ptype] = duration
@@ -51,11 +51,7 @@ class Tank:
             self.active_powerups[k] -= dt
 
     def take_damage(self, amount: int = 1) -> bool:
-        """Apply damage, respecting shield.
-
-        Returns True if this damage reduced health to 0 or below (tank died),
-        otherwise False.
-        """
+        """Apply damage. Shield absorbs hit. Returns True if tank died."""
         if self.has_shield:
             # Shield absorbs the hit and is consumed
             del self.active_powerups[PowerUpType.SHIELD]
@@ -63,7 +59,7 @@ class Tank:
         self.health -= amount
         return self.health <= 0
 
-    # -- Movement -------------------------------------------------------------
+    # Movement
 
     def update(self, dt: float, forward: float, turn: float, turret_turn: float = 0.0) -> None:
         self.rotation_deg += turn * TANK_TURN_SPEED * dt
@@ -76,7 +72,7 @@ class Tank:
 
         self.position += direction * (forward * speed * dt)
 
-        # Independent turret rotation – turret keeps its position when no input
+        # Rotate turret only when input given
         if turret_turn != 0.0:
             self.turret_rotation_deg += turret_turn * TURRET_TURN_SPEED * dt
 

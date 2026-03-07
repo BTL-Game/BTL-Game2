@@ -6,7 +6,7 @@ import pygame
 
 
 def reflect_velocity(velocity: pygame.Vector2, normal: pygame.Vector2) -> pygame.Vector2:
-    # Reflection formula: v' = v - 2 * (v dot n) * n
+    # v' = v - 2*(v.n)*n
     return velocity - 2 * velocity.dot(normal) * normal
 
 

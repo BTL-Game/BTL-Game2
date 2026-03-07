@@ -46,7 +46,6 @@ from game.ui import (
 )
 
 
-# ── small helper ──────────────────────────────────────────────────────────
 
 @dataclass
 class ShootFlash:
@@ -60,7 +59,7 @@ class ShootFlash:
 
 class GameState:
     def __init__(self) -> None:
-        # Mode: "title" → "map_select" → "countdown" → "play" → "round_over" → "countdown" → "play"/… → "match_over"
+        # Mode: title > map_select > countdown > play > round_over > match_over
         self.mode: str = "title"
 
         # Managers
@@ -87,25 +86,25 @@ class GameState:
         self.match_winner_id: int | None = None  # overall match winner
         self.round_number: int = 0
 
-        # Debounce for key presses in menus
+        # Debounce for menu key presses
         self._key_cooldown: float = 0.0
-        # Timer to keep the round_over screen visible before accepting input
+        # Timer to keep round_over screen visible before accepting input
         self._round_over_timer: float = 0.0
-        # Explosion sprite and position for drawing during round_over
+        # Explosion sprite shown during round_over
         self._explosion_sprite: pygame.Surface | None = None
         self._explosion_pos: pygame.Vector2 = pygame.Vector2(0, 0)
         # ESC key tracking for pause menu
         self._esc_pressed: bool = False
-        # Pause menu state: 0 = SFX, 1 = Music, 2 = Return to Main Menu
+        # Pause menu: 0=SFX, 1=Music, 2=Return
         self._pause_menu_selection: int = 0
-        # Countdown timer (3-2-1) before gameplay starts
+        # Countdown timer (3-2-1) before gameplay
         self._countdown_timer: float = 0.0
-        # Title screen menu selection: 0 = Play, 1 = Settings
+        # Title menu: 0=Play, 1=Settings
         self._title_selection: int = 0
-        # Settings menu selection (reuses pause-menu volume controls from title)
+        # Settings menu selection
         self._settings_selection: int = 0
 
-    # ── public interface ──────────────────────────────────────────────────
+    # Public interface
 
     def update(self, dt: float) -> None:
         self._key_cooldown = max(0.0, self._key_cooldown - dt)
@@ -195,7 +194,7 @@ class GameState:
             self._render_play(screen)
             draw_match_winner(screen, self.match_winner_id or 1, self.round_wins)
 
-    # ── map select ────────────────────────────────────────────────────────
+    # Map select
 
     def _update_map_select(self, keys) -> None:
         if self._key_cooldown > 0:
@@ -210,7 +209,7 @@ class GameState:
             self._start_match()
             self._key_cooldown = 0.25
 
-    # ── match / round lifecycle ───────────────────────────────────────────
+    # Match / round lifecycle
 
     def _start_match(self) -> None:
         self.current_map = ALL_MAPS[self.map_index]
@@ -253,7 +252,7 @@ class GameState:
         self._countdown_timer = 3.0
         self.mode = "countdown"
 
-    # ── gameplay loop ─────────────────────────────────────────────────────
+    # Gameplay loop
 
     def _update_play(self, dt: float, keys) -> None:
         # Handle ESC for pause menu
@@ -283,7 +282,7 @@ class GameState:
             self.scores[pid] += score_val
             self.sound_mgr.play_powerup()  # reuse powerup sound for food
 
-        # Check if any player reached score limit via food → win the round
+        # Check if any player reached food score limit -> win the round
         for pid in (1, 2):
             if self.scores[pid] >= SCORE_LIMIT and round_winner is None and self.winner_id is None:
                 round_winner = pid
@@ -318,12 +317,11 @@ class GameState:
                     self._explosion_sprite = explosion_sprite
                     self._explosion_pos = killed_tank.position.copy()
 
-            # Prevent immediately skipping the round-over screen (e.g. from a
-            # held key). Give players a short moment to see the result.
+            # Delay input so players can see the round result
             self._round_over_timer = 1.0
             self.mode = "round_over"
 
-    # ── title screen ──────────────────────────────────────────────────────
+    # Title screen
 
     def _update_title(self, keys) -> None:
         """Navigate the main menu (Play / Settings)."""
@@ -434,7 +432,7 @@ class GameState:
         # make the turret follow the tank body's rotation delta
         tank.turret_rotation_deg += (tank.rotation_deg - previous_rotation)
 
-        # Collision resolution (split X/Y) – treat the other tank as solid
+        # Collision resolution (split X/Y) - treat other tank as solid
         other_id = 2 if player_id == 1 else 1
         other_tank = self.tanks[other_id]
         active_walls = [w for w in self.walls if not w.is_destroyed]
@@ -449,10 +447,10 @@ class GameState:
             self._spawn_shoot_flash(player_id, tank)
             self.sound_mgr.play_shoot()
 
-    # ── rendering ─────────────────────────────────────────────────────────
+    # Rendering
 
     def _render_play(self, screen: pygame.Surface) -> None:
-        # Draw background image if available, otherwise the screen is already filled with BG_COLOR
+        # Draw background if available
         if getattr(self.sprites, "background", None) is not None:
             screen.blit(self.sprites.background, (0, 0))
 
@@ -582,7 +580,7 @@ class GameState:
         p2 = self.tanks[2]
         draw_hud(screen, p1, p2, self.scores, self.round_number, self.round_wins)
 
-    # ── helper drawing methods ────────────────────────────────────────────
+    # Helper drawing
 
     def _draw_tank_fallback(self, screen: pygame.Surface, tank: Tank, player_id: int) -> None:
         color = PLAYER1_COLOR if player_id == 1 else PLAYER2_COLOR
@@ -631,7 +629,7 @@ class GameState:
         rect = rotated.get_rect(center=(int(flash.position.x), int(flash.position.y)))
         screen.blit(rotated, rect)
 
-    # ── utilities ─────────────────────────────────────────────────────────
+    # Utilities
 
     def _menu_confirm(self, keys) -> bool:
         if self._key_cooldown > 0:

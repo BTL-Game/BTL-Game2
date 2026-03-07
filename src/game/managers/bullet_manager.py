@@ -114,7 +114,7 @@ class BulletManager:
         self.bullets = remaining
         return winner
 
-    # -- internal helpers ---------------------------------------------------
+    # Internal helpers
 
     @staticmethod
     def _collision_normal(bullet: pygame.Rect, wall: pygame.Rect) -> tuple[pygame.Vector2, float]:

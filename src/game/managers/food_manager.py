@@ -39,10 +39,7 @@ class FoodManager:
         self._spawn_batch(self._spawn_count_per_wave)
 
     def update(self, dt: float, tanks: dict[int, Tank]) -> list[tuple[int, int]]:
-        """Tick timer, spawn more food, check pickups.
-
-        Returns list of (player_id, score_value) for each food collected.
-        """
+        """Tick timer, spawn food, check pickups. Returns [(player_id, score)] collected."""
         pickups: list[tuple[int, int]] = []
 
         # Periodic respawn with escalation
@@ -75,7 +72,7 @@ class FoodManager:
 
         return pickups
 
-    # -- internal -----------------------------------------------------------
+    # Internal
 
     def _spawn_batch(self, count: int) -> None:
         if not self._open_tiles:

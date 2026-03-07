@@ -21,7 +21,7 @@ _log = logging.getLogger(__name__)
 
 
 class SoundManager:
-    """Load and play sound effects and background music. Gracefully degrades if files are missing."""
+    """Loads and plays SFX and background music. Silently degrades if audio is unavailable."""
 
     def __init__(self) -> None:
         self._enabled = True
@@ -33,7 +33,7 @@ class SoundManager:
         try:
             pygame.mixer.init()
         except pygame.error:
-            # Try a more explicit init as a fallback (different platforms need params)
+            # Fallback init for platform compatibility
             try:
                 pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=512)
             except pygame.error:
@@ -85,7 +85,7 @@ class SoundManager:
         """Get current music volume."""
         return self._music_volume
 
-    # -- internal -----------------------------------------------------------
+    # Internal
 
     def _update_sfx_volume(self) -> None:
         """Apply current SFX volume to all sounds."""

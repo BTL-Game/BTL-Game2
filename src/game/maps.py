@@ -75,14 +75,10 @@ def get_open_tiles(grid: list[str]) -> list[pygame.Vector2]:
     return open_tiles
 
 
-# ---------------------------------------------------------------------------
-# Map Registry — Single Source of Truth
-# ---------------------------------------------------------------------------
+# Map Registry
 
 class MapRegistry:
-    """Manages all available maps in the game.
-
-    """
+    """Manages all available maps."""
 
     # Starts empty; populated by register_map() at module parse time.
     _maps: dict[str, MapData] = {}
@@ -116,34 +112,20 @@ class MapRegistry:
         return None
 
 
-# Auto-Registration Helper
+# Auto-registration helper
 
-# ALL_MAPS is populated by register_map() at import time.
-# It stays in sync with MapRegistry automatically — no manual updates required.
+# ALL_MAPS is auto-populated by register_map() at import time.
 ALL_MAPS: list[MapData] = []
 
 
 def register_map(map_data: MapData) -> MapData:
-    """Register a MapData instance with MapRegistry and the ALL_MAPS list.
-
-    Call this immediately after defining a new map constant::
-
-        MAP_DESERT = MapData(name="Desert", grid=[...])
-        register_map(MAP_DESERT)
-
-    Adding that single call is the *only* step needed to make a new map appear
-    in the map selection screen. No other file needs to be modified.
-
-    Returns the same MapData object unchanged (for chaining convenience).
-    """
+    """Register a map with MapRegistry and ALL_MAPS. Returns the same MapData."""
     MapRegistry.add_map(map_data.name.lower(), map_data)
     ALL_MAPS.append(map_data)
     return map_data
 
 
-# ---------------------------------------------------------------------------
-# Map Definitions
-# ---------------------------------------------------------------------------
+# Map definitions
 
 MAP_CLASSIC = register_map(MapData(
     name="Classic",

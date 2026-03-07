@@ -141,14 +141,14 @@ def load_sprites() -> SpriteSet:
     wall_broken = _load_image(ASSET_ROOT / "Wall" / WALL_BROKEN_NAME, wall_size)
     wall_destroyed = _load_image(ASSET_ROOT / "Wall" / WALL_DESTROYED_NAME, wall_size)
 
-    # Load food and power-up sprites (assets stored in 'Food' directory)
+    # Food and power-up sprites
     food_sprite = _load_image(ASSET_ROOT / "Food" / FOOD_NAME, food_size)
     powerup_speed = _load_image(ASSET_ROOT / "Food" / POWERUP_SPEED_NAME, powerup_size)
     powerup_shield = _load_image(ASSET_ROOT / "Food" / POWERUP_SHIELD_NAME, powerup_size)
     powerup_triple = _load_image(ASSET_ROOT / "Food" / POWERUP_TRIPLE_NAME, powerup_size)
 
-    # Load background (scale to screen size if present)
-    # Delay importing SCREEN_WIDTH/HEIGHT so assets stays decoupled; load size if available
+    # Background sprite
+    # Lazy import to avoid circular dependency
     try:
         from game.config import SCREEN_WIDTH, SCREEN_HEIGHT
         bg_size = (SCREEN_WIDTH, SCREEN_HEIGHT)
