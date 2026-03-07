@@ -8,6 +8,7 @@ A two-player local multiplayer tank battle game built with Python and Pygame. Tw
 
 - [Features](#features)
 - [Quick Start](#quick-start)
+- [Build Executable](#build-executable)
 - [Controls](#controls)
 - [Gameplay Mechanics](#gameplay-mechanics)
 - [Physics Implementation](#physics-implementation)
@@ -55,6 +56,54 @@ pip install -r requirements.txt
 # 4. Run the game
 python src/main.py
 ```
+
+---
+
+## Build Executable
+
+The project uses **PyInstaller** with the included `game.spec` to produce a single-file executable that bundles the game and all assets.
+
+### Prerequisites
+
+```bash
+# Make sure you are inside the virtual environment, then install PyInstaller
+pip install pyinstaller
+
+# Optional: install UPX for smaller output (Linux / Windows)
+# Ubuntu / Debian:
+sudo apt install upx
+# Or download from https://upx.github.io and add it to PATH
+```
+
+### Build
+
+```bash
+# From the project root
+pyinstaller game.spec
+```
+
+PyInstaller will create two directories:
+
+| Directory | Contents |
+|---|---|
+| `build/` | Intermediate build artefacts (can be deleted after a successful build) |
+| `dist/` | The final output — contains the standalone `BTL-Game2` executable |
+
+### Run the built executable
+
+```bash
+# Linux / macOS
+./dist/BTL-Game2
+
+# Windows
+dist\BTL-Game2.exe
+```
+
+> **Notes:**
+> - The `game.spec` already includes the entire `assets/` folder, so the produced binary is fully self-contained — no extra files need to be shipped alongside it.
+> - `console=False` is set in the spec, so no terminal window will appear when running the GUI build.
+> - If UPX is **not** installed and you see a warning about it, the build still succeeds — the output will just be slightly larger.
+> - To rebuild cleanly, delete the `build/` and `dist/` directories before re-running the command.
 
 ---
 
